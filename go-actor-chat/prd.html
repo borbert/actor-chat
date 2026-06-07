@@ -1,0 +1,884 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PRD — Chat App (Go · Hollywood · Convex)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=IBM+Plex+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --paper: #f7f4ec;
+    --paper-2: #fffdf8;
+    --ink: #1c1b18;
+    --ink-soft: #4a4842;
+    --ink-faint: #7d7a70;
+    --rule: #d9d3c4;
+    --rule-soft: #e7e2d6;
+    --accent: #0c5c54;
+    --accent-2: #b5562a;
+    --accent-wash: #e6efec;
+    --code-bg: #1f2421;
+    --code-ink: #e4e6df;
+    --code-faint: #8a9088;
+    --maxw: 1180px;
+  }
+
+  * { box-sizing: border-box; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 16.5px;
+    line-height: 1.62;
+    -webkit-font-smoothing: antialiased;
+    background-image:
+      radial-gradient(circle at 12% -5%, rgba(12,92,84,0.05), transparent 40%),
+      radial-gradient(circle at 95% 0%, rgba(181,86,42,0.04), transparent 35%);
+    background-attachment: fixed;
+  }
+
+  /* ---------- Masthead ---------- */
+  .masthead {
+    border-bottom: 2px solid var(--ink);
+    padding: 56px 32px 30px;
+  }
+  .masthead-inner { max-width: var(--maxw); margin: 0 auto; }
+  .eyebrow {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin: 0 0 18px;
+  }
+  .masthead h1 {
+    font-family: 'Fraunces', serif;
+    font-weight: 600;
+    font-size: clamp(2.6rem, 6vw, 4.4rem);
+    line-height: 1.02;
+    letter-spacing: -0.02em;
+    margin: 0 0 8px;
+  }
+  .masthead h1 .stack {
+    display: block;
+    font-size: clamp(1rem, 2.4vw, 1.5rem);
+    font-weight: 400;
+    font-style: italic;
+    color: var(--ink-soft);
+    letter-spacing: 0;
+    margin-top: 10px;
+  }
+  .meta-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 1px;
+    background: var(--rule);
+    border: 1px solid var(--rule);
+    margin-top: 34px;
+  }
+  .meta-cell { background: var(--paper-2); padding: 12px 16px; }
+  .meta-cell .k {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10.5px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    display: block;
+    margin-bottom: 4px;
+  }
+  .meta-cell .v { font-weight: 600; font-size: 15px; }
+  .meta-cell .v.tbd { color: var(--accent-2); }
+
+  /* ---------- Layout ---------- */
+  .shell {
+    max-width: var(--maxw);
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: 248px 1fr;
+    gap: 56px;
+    padding: 0 32px 120px;
+    align-items: start;
+  }
+
+  /* ---------- TOC ---------- */
+  nav.toc {
+    position: sticky;
+    top: 0;
+    max-height: 100vh;
+    overflow-y: auto;
+    padding: 48px 0 40px;
+    font-size: 13.5px;
+  }
+  nav.toc .toc-title {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    margin: 0 0 14px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--rule);
+  }
+  nav.toc ol { list-style: none; margin: 0; padding: 0; counter-reset: toc; }
+  nav.toc li { margin: 0; }
+  nav.toc a {
+    display: block;
+    padding: 5px 12px 5px 34px;
+    color: var(--ink-soft);
+    text-decoration: none;
+    border-left: 2px solid transparent;
+    position: relative;
+    transition: color .15s, border-color .15s, background .15s;
+    line-height: 1.35;
+  }
+  nav.toc a::before {
+    counter-increment: toc;
+    content: counter(toc, decimal-leading-zero);
+    position: absolute;
+    left: 10px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: var(--ink-faint);
+    top: 7px;
+  }
+  nav.toc a:hover { color: var(--ink); background: rgba(12,92,84,0.05); }
+  nav.toc a.active {
+    color: var(--accent);
+    border-left-color: var(--accent);
+    font-weight: 600;
+  }
+  nav.toc a.no-num { padding-left: 12px; }
+  nav.toc a.no-num::before { content: ""; counter-increment: none; }
+
+  /* ---------- Article ---------- */
+  article { padding-top: 48px; min-width: 0; }
+
+  section { scroll-margin-top: 24px; margin-bottom: 12px; }
+  section + section { margin-top: 14px; }
+
+  h2 {
+    font-family: 'Fraunces', serif;
+    font-weight: 600;
+    font-size: clamp(1.7rem, 3vw, 2.3rem);
+    letter-spacing: -0.015em;
+    line-height: 1.12;
+    margin: 52px 0 18px;
+    padding-top: 26px;
+    border-top: 1px solid var(--rule);
+    position: relative;
+  }
+  section:first-child h2 { border-top: none; padding-top: 0; margin-top: 8px; }
+  h2 .num {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: var(--accent);
+    display: inline-block;
+    margin-right: 12px;
+    vertical-align: middle;
+  }
+  h3 {
+    font-family: 'Fraunces', serif;
+    font-weight: 600;
+    font-size: 1.28rem;
+    letter-spacing: -0.01em;
+    margin: 34px 0 12px;
+    color: var(--ink);
+  }
+  h3 code { font-size: 0.92em; }
+
+  p { margin: 0 0 16px; }
+  a { color: var(--accent); }
+
+  strong { font-weight: 600; }
+
+  ul, ol.body-list { margin: 0 0 18px; padding-left: 0; }
+  ul li, ol.body-list li {
+    margin: 0 0 8px;
+    padding-left: 26px;
+    position: relative;
+    list-style: none;
+  }
+  ul li::before {
+    content: "";
+    position: absolute;
+    left: 4px; top: 11px;
+    width: 7px; height: 7px;
+    background: var(--accent);
+    transform: rotate(45deg);
+  }
+  ol.body-list { counter-reset: bl; }
+  ol.body-list li { counter-increment: bl; }
+  ol.body-list li::before {
+    content: counter(bl);
+    position: absolute;
+    left: 0; top: 1px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--accent);
+    background: var(--accent-wash);
+    width: 18px; height: 18px;
+    display: grid; place-items: center;
+    border-radius: 3px;
+  }
+  li strong:first-child { color: var(--ink); }
+
+  /* ---------- Code ---------- */
+  code {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.86em;
+    background: rgba(12,92,84,0.09);
+    color: #08443e;
+    padding: 1px 6px;
+    border-radius: 4px;
+  }
+  pre {
+    background: var(--code-bg);
+    color: var(--code-ink);
+    border-radius: 10px;
+    padding: 20px 22px;
+    overflow-x: auto;
+    margin: 0 0 22px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    line-height: 1.6;
+    border: 1px solid #2c322e;
+    box-shadow: 0 14px 30px -18px rgba(0,0,0,0.5);
+  }
+  pre code { background: none; color: inherit; padding: 0; font-size: inherit; }
+  pre.diagram { color: var(--code-faint); }
+  pre.diagram b { color: #6fd3c5; font-weight: 400; }
+
+  /* ---------- Tables ---------- */
+  .table-wrap { overflow-x: auto; margin: 0 0 24px; border: 1px solid var(--rule); border-radius: 8px; }
+  table {
+    border-collapse: collapse;
+    width: 100%;
+    font-size: 14.5px;
+    background: var(--paper-2);
+  }
+  th {
+    text-align: left;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    padding: 12px 16px;
+    border-bottom: 2px solid var(--ink);
+    background: var(--paper);
+    white-space: nowrap;
+  }
+  td {
+    padding: 11px 16px;
+    border-bottom: 1px solid var(--rule-soft);
+    vertical-align: top;
+  }
+  tr:last-child td { border-bottom: none; }
+  td code { font-size: 0.85em; white-space: nowrap; }
+  .pill {
+    display: inline-block;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    padding: 2px 8px;
+    border-radius: 20px;
+  }
+  .pill.high { background: #f3d9cf; color: #8a2f10; }
+  .pill.med { background: #f1e6c9; color: #836410; }
+  .pill.low { background: #d6e9df; color: #1c6347; }
+
+  /* ---------- Callout ---------- */
+  .callout {
+    background: var(--accent-wash);
+    border-left: 3px solid var(--accent);
+    padding: 16px 20px;
+    margin: 0 0 22px;
+    border-radius: 0 8px 8px 0;
+    font-size: 15px;
+  }
+  .callout p:last-child { margin-bottom: 0; }
+
+  /* ---------- Footer ---------- */
+  footer {
+    border-top: 2px solid var(--ink);
+    padding: 30px 32px 60px;
+    text-align: center;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11.5px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+  }
+
+  /* ---------- Responsive ---------- */
+  @media (max-width: 900px) {
+    .shell { grid-template-columns: 1fr; gap: 0; padding: 0 22px 80px; }
+    nav.toc {
+      position: static;
+      max-height: none;
+      padding: 32px 0 8px;
+      margin-bottom: 8px;
+      border-bottom: 1px solid var(--rule);
+    }
+    nav.toc ol {
+      column-count: 2;
+      column-gap: 18px;
+    }
+    nav.toc a { padding-left: 30px; }
+    article { padding-top: 28px; }
+    .masthead { padding: 40px 22px 26px; }
+  }
+  @media (max-width: 560px) {
+    nav.toc ol { column-count: 1; }
+    body { font-size: 16px; }
+  }
+</style>
+</head>
+<body>
+
+<header class="masthead">
+  <div class="masthead-inner">
+    <p class="eyebrow">Product Requirements Document · Draft v0.1</p>
+    <h1>Chat App
+      <span class="stack">A real-time messaging system on Go · Hollywood actors · Convex</span>
+    </h1>
+    <div class="meta-grid">
+      <div class="meta-cell"><span class="k">Status</span><span class="v">Draft v0.1</span></div>
+      <div class="meta-cell"><span class="k">Owner</span><span class="v">Bob (borbert)</span></div>
+      <div class="meta-cell"><span class="k">Last updated</span><span class="v">2026-06-07</span></div>
+      <div class="meta-cell"><span class="k">Codename</span><span class="v tbd">TBD</span></div>
+    </div>
+  </div>
+</header>
+
+<div class="shell">
+
+  <nav class="toc">
+    <p class="toc-title">Contents</p>
+    <ol>
+      <li><a href="#s1">Executive summary</a></li>
+      <li><a href="#s2">Problem &amp; motivation</a></li>
+      <li><a href="#s3">Goals</a></li>
+      <li><a href="#s4">Non-goals (v1)</a></li>
+      <li><a href="#s5">Users &amp; use cases</a></li>
+      <li><a href="#s6">Architecture overview</a></li>
+      <li><a href="#s7">Tech stack &amp; rationale</a></li>
+      <li><a href="#s8">Data model</a></li>
+      <li><a href="#s9">Actor topology</a></li>
+      <li><a href="#s10">Core flows</a></li>
+      <li><a href="#s11">API surface</a></li>
+      <li><a href="#s12">Reliability &amp; ordering</a></li>
+      <li><a href="#s13">Auth &amp; security</a></li>
+      <li><a href="#s14">Observability</a></li>
+      <li><a href="#s15">Project structure</a></li>
+      <li><a href="#s16">Milestones</a></li>
+      <li><a href="#s17">Open questions</a></li>
+      <li><a href="#s18">Risks &amp; mitigations</a></li>
+      <li><a href="#s19">Glossary</a></li>
+      <li><a href="#sA" class="no-num">Appendix A · Decisions</a></li>
+    </ol>
+  </nav>
+
+  <article>
+
+    <section id="s1">
+      <h2><span class="num">01</span>Executive summary</h2>
+      <p>A real-time chat application built in Go using the Hollywood actor framework for in-memory concurrency and message ordering, with Convex as the persistence and client fan-out layer. The Go server handles business logic, validation, presence, and rate limiting; Convex handles durable storage and pushes updates to connected clients over its native WebSocket.</p>
+      <p>The architecture optimizes for <strong>correctness</strong> (single-writer-per-room ordering, idempotent writes) and <strong>simplicity</strong> (no DIY fan-out, no DIY subscription layer) over raw latency.</p>
+    </section>
+
+    <section id="s2">
+      <h2><span class="num">02</span>Problem &amp; motivation</h2>
+      <p>Most chat implementations either (a) ship a thin wrapper over a database with no concurrency story, leading to ordering bugs, race conditions, and fragile delivery, or (b) build a from-scratch realtime stack with bespoke WebSocket fan-out, presence, and persistence that ends up being 80% of the codebase.</p>
+      <p>This project explores a third path: use an actor system for the logical concurrency model and a reactive database for the realtime data plane. The goal is to find out how lean a correct, real-time chat app can be when each layer does the job it's best at.</p>
+    </section>
+
+    <section id="s3">
+      <h2><span class="num">03</span>Goals</h2>
+      <ol class="body-list">
+        <li><strong>Correct message ordering</strong> within a room, guaranteed by single-writer actor semantics.</li>
+        <li><strong>Durable, idempotent writes</strong> — retries are safe; no duplicate messages even under network failures or actor restarts.</li>
+        <li><strong>Realtime delivery</strong> to all connected clients in a room with end-to-end latency under 250&nbsp;ms p95.</li>
+        <li><strong>Resilient to restarts</strong> — actors can be re-spawned on cold start or failover and reconstruct state from Convex.</li>
+        <li><strong>Small, idiomatic Go codebase</strong> — favor clarity over abstraction. No frameworks beyond Echo, Hollywood, and the Convex HTTP client.</li>
+        <li><strong>Production deployable on a single node</strong> for v1; architecture leaves a clear path to multi-node later.</li>
+      </ol>
+    </section>
+
+    <section id="s4">
+      <h2><span class="num">04</span>Non-goals (v1)</h2>
+      <ul>
+        <li>Voice, video, or screen sharing.</li>
+        <li>File attachments beyond text and image URLs.</li>
+        <li>End-to-end encryption.</li>
+        <li>Federation or interoperability with other chat systems.</li>
+        <li>Multi-region or multi-node clustering. Single-node deployment only.</li>
+        <li>Native mobile apps (web client only initially).</li>
+        <li>Admin moderation tooling beyond basic block/report flags in the schema.</li>
+        <li>Search across full message history (Convex queries by room/time only).</li>
+      </ul>
+    </section>
+
+    <section id="s5">
+      <h2><span class="num">05</span>Users &amp; use cases</h2>
+      <p><strong>Primary user</strong>: an individual joining one or more chat rooms to exchange text messages in real time with other members.</p>
+      <p><strong>Core use cases</strong>:</p>
+      <ol class="body-list">
+        <li>Sign in and see a list of rooms I belong to.</li>
+        <li>Open a room and see recent message history.</li>
+        <li>Send a message and see it appear immediately (optimistic UI), with confirmation when persisted.</li>
+        <li>Receive messages from others in the room in near-real-time.</li>
+        <li>See who else is currently online in the room (presence).</li>
+        <li>See typing indicators when others are composing.</li>
+        <li>Reconnect after a network blip and catch up on missed messages without duplicates.</li>
+      </ol>
+      <p><strong>Out of scope for v1</strong>: invitations, room discovery, public rooms, threading, reactions, mentions, push notifications.</p>
+    </section>
+
+    <section id="s6">
+      <h2><span class="num">06</span>Architecture overview</h2>
+<pre class="diagram">                <b>Web Client (TS)</b>
+        ┌────────────────────────────────────┐
+        │  Convex SDK            App WebSocket │
+        │  (subscribes to        (presence,    │
+        │   messages)             typing, send)│
+        └──────┬──────────────────────┬────────┘
+               │                      │
+       <b>Convex</b>  │                      │  <b>Go Server (Echo)</b>
+   ┌───────────▼─────────┐   ┌────────▼──────────────┐
+   │ • messages          │   │ • Auth middleware     │
+   │ • rooms             │   │ • WS connection mgr   │
+   │ • memberships       │   │ • Hollywood engine    │
+   │ • subscriptions     │   │    ├─ Room actors     │
+   │   push to clients   │   │    └─ Presence actor  │
+   └──────────▲──────────┘   └────────┬──────────────┘
+              │   mutations           │
+              └───────────────────────┘</pre>
+      <p><strong>Key principles</strong>:</p>
+      <ul>
+        <li><strong>Convex is the source of truth</strong> for durable data. Actors hold in-memory working state only.</li>
+        <li><strong>The room actor is the single writer</strong> for its room's messages. This guarantees ordering and makes retries safe without DB locks.</li>
+        <li><strong>Convex pushes message updates to clients directly.</strong> The Go server does not fan out chat messages.</li>
+        <li><strong>The Go WebSocket exists for ephemeral state</strong> that doesn't belong in the DB: presence, typing indicators, send acknowledgements, rate limiting, and any future features needing sub-50&nbsp;ms response.</li>
+      </ul>
+    </section>
+
+    <section id="s7">
+      <h2><span class="num">07</span>Tech stack &amp; rationale</h2>
+      <div class="table-wrap">
+      <table>
+        <thead><tr><th>Layer</th><th>Choice</th><th>Why</th></tr></thead>
+        <tbody>
+          <tr><td>Language</td><td>Go 1.23+</td><td>Goroutines and channels map naturally to actor concurrency; mature ecosystem; owner is a daily Go developer.</td></tr>
+          <tr><td>HTTP framework</td><td>Echo v4</td><td>Owner's standard; lightweight; clean middleware story.</td></tr>
+          <tr><td>Actor framework</td><td>Hollywood</td><td>Owner is familiar; first-class Go API; supports per-actor mailboxes and supervision.</td></tr>
+          <tr><td>Database / Realtime</td><td>Convex</td><td>Built-in client subscriptions eliminate the need to write a fan-out layer. Schemaful, transactional, fast.</td></tr>
+          <tr><td>Convex client (server-side)</td><td>Custom Go HTTP client</td><td>No official Go SDK; HTTP API is straightforward (<code>/api/query</code>, <code>/api/mutation</code>, <code>/api/action</code>).</td></tr>
+          <tr><td>Web client</td><td>TypeScript + Convex React SDK</td><td>Convex's reactive SDK does the heavy lifting client-side. Framework choice TBD (React/TanStack Start likely).</td></tr>
+          <tr><td>Auth</td><td>TBD — Clerk or WorkOS</td><td>Both familiar to the owner. Decision driven by pricing model and Convex auth integration.</td></tr>
+          <tr><td>Live reload</td><td>Air</td><td>Standard with go-blueprint scaffold.</td></tr>
+          <tr><td>Hosting</td><td>TBD — Fly.io likely</td><td>Owner has prior deployment experience there.</td></tr>
+        </tbody>
+      </table>
+      </div>
+    </section>
+
+    <section id="s8">
+      <h2><span class="num">08</span>Data model (Convex schema)</h2>
+      <p>Defined in <code>convex/schema.ts</code>. Indicative shape:</p>
+<pre><code>export default defineSchema({
+  users: defineTable({
+    authId: v.string(),         // external auth provider subject
+    displayName: v.string(),
+    avatarUrl: v.optional(v.string()),
+    createdAt: v.number(),
+  }).index("by_authId", ["authId"]),
+
+  rooms: defineTable({
+    name: v.string(),
+    kind: v.union(v.literal("dm"), v.literal("group")),
+    createdBy: v.id("users"),
+    createdAt: v.number(),
+  }),
+
+  memberships: defineTable({
+    roomId: v.id("rooms"),
+    userId: v.id("users"),
+    joinedAt: v.number(),
+    lastReadAt: v.optional(v.number()),
+  }).index("by_room", ["roomId"])
+    .index("by_user", ["userId"])
+    .index("by_room_user", ["roomId", "userId"]),
+
+  messages: defineTable({
+    roomId: v.id("rooms"),
+    userId: v.id("users"),
+    body: v.string(),
+    clientId: v.string(),       // idempotency key from sender
+    createdAt: v.number(),
+    editedAt: v.optional(v.number()),
+    deletedAt: v.optional(v.number()),
+  }).index("by_room_time", ["roomId", "createdAt"])
+    .index("by_room_clientId", ["roomId", "clientId"]),
+});</code></pre>
+      <p><strong>Notes</strong>:</p>
+      <ul>
+        <li><code>clientId</code> is required on every message and is unique per <code>(roomId, clientId)</code>. The <code>send</code> mutation checks for existing rows on this index before inserting; if found, it returns the existing message instead of creating a new one. This is what makes the entire send path idempotent.</li>
+        <li><code>lastReadAt</code> on <code>memberships</code> powers unread-message indicators (computed client-side via Convex subscriptions).</li>
+        <li>Soft-delete via <code>deletedAt</code> rather than hard delete so the client can show "message deleted" placeholders.</li>
+      </ul>
+    </section>
+
+    <section id="s9">
+      <h2><span class="num">09</span>Actor topology</h2>
+
+      <h3><code>RoomActor</code></h3>
+      <ul>
+        <li>One per active room. Spawned lazily on first activity, named by deterministic PID <code>room/&lt;roomId&gt;</code>.</li>
+        <li><strong>Responsibilities</strong>: validate sends, enforce rate limits, hold idempotency cache, write to Convex, broadcast presence/typing events to local WS connections.</li>
+        <li><strong>State (in-memory only)</strong>: <code>members</code> (userId → connection PID), <code>seen</code> (bounded LRU of clientId → messageId), <code>lastActivity</code> for idle eviction.</li>
+        <li><strong>Lifecycle</strong>: idle for &gt;5 minutes with zero connected members → self-poison.</li>
+      </ul>
+
+      <h3><code>ConnectionActor</code></h3>
+      <ul>
+        <li>One per active WebSocket connection.</li>
+        <li><strong>Responsibilities</strong>: read frames from the client, route messages to the appropriate RoomActor, write frames back (presence updates, send acks, errors).</li>
+        <li><strong>Lifecycle</strong>: lives for the duration of the WS connection.</li>
+      </ul>
+
+      <h3><code>PresenceActor</code> (single, global)</h3>
+      <ul>
+        <li>Tracks online users across all rooms.</li>
+        <li><strong>Responsibilities</strong>: respond to "is user X online?" queries, broadcast user-online/offline events to RoomActors that care.</li>
+        <li>May be redundant for v1 — could fold into RoomActor's <code>members</code> map. Decision deferred to milestone 2.</li>
+      </ul>
+
+      <h3><code>RoomRegistry</code></h3>
+      <ul>
+        <li>Not an actor — a small struct around the Hollywood engine that maps <code>roomId → *actor.PID</code>, spawning if absent. Provides the only public API for code to "get me the actor for this room."</li>
+      </ul>
+    </section>
+
+    <section id="s10">
+      <h2><span class="num">10</span>Core flows</h2>
+
+      <h3>10.1 — Send message</h3>
+      <ol class="body-list">
+        <li>Client generates <code>clientId</code> (UUID) for the new message and renders it optimistically in its own UI.</li>
+        <li>Client sends <code>{type: "send", roomId, body, clientId}</code> over the app WebSocket.</li>
+        <li>ConnectionActor receives, looks up RoomActor via RoomRegistry.</li>
+        <li>RoomActor checks its in-memory <code>seen</code> map. If <code>clientId</code> present → respond with existing messageId, done.</li>
+        <li>RoomActor calls <code>messages:send</code> Convex mutation (synchronous, with 5s timeout).</li>
+        <li>Convex mutation: check <code>by_room_clientId</code> index. If exists, return that message. Otherwise insert new row with <code>createdAt: Date.now()</code>.</li>
+        <li>RoomActor caches <code>clientId → messageId</code> and sends <code>SendAck</code> back to ConnectionActor.</li>
+        <li>ConnectionActor writes ack frame to client.</li>
+        <li><strong>Independently</strong>: Convex pushes the new row to all clients subscribed to <code>messagesInRoom(roomId)</code>. They reconcile against their optimistic UI by <code>clientId</code>.</li>
+      </ol>
+
+      <h3>10.2 — Open room &amp; load history</h3>
+      <ol class="body-list">
+        <li>Client navigates to room. Convex React SDK subscribes to <code>messagesInRoom(roomId, limit: 50)</code>.</li>
+        <li>Initial payload arrives; client renders.</li>
+        <li>Subscription stays open — new messages and edits arrive via push.</li>
+        <li><strong>No Go server involvement</strong> for history load.</li>
+      </ol>
+
+      <h3>10.3 — Join WebSocket &amp; announce presence</h3>
+      <ol class="body-list">
+        <li>Client opens WS to Go server with auth token.</li>
+        <li>Auth middleware validates token, extracts <code>userId</code>.</li>
+        <li>Server spawns ConnectionActor for this connection.</li>
+        <li>Client sends <code>{type: "join", roomId}</code> for each room it wants presence in.</li>
+        <li>ConnectionActor messages RoomActor: <code>Join{userId, conn}</code>.</li>
+        <li>RoomActor adds to <code>members</code>, broadcasts presence update to other ConnectionActors.</li>
+      </ol>
+
+      <h3>10.4 — Reconnect after network blip</h3>
+      <ol class="body-list">
+        <li>Convex subscription auto-reconnects and resyncs missed messages — no server logic needed for message catchup.</li>
+        <li>New WebSocket connection creates a fresh ConnectionActor; client re-issues join for each room.</li>
+        <li>Any in-flight sends the client didn't get acks for are re-sent with the <strong>same <code>clientId</code></strong> → idempotent dedupe in Convex.</li>
+      </ol>
+
+      <h3>10.5 — Actor crash / restart</h3>
+      <ol class="body-list">
+        <li>Hollywood supervisor restarts the RoomActor with empty state.</li>
+        <li>In-memory <code>seen</code> cache is lost — first retry of a recently-acked message hits Convex, which dedupes via the unique index and returns the existing messageId.</li>
+        <li>No data loss, no duplicates, no client-visible disruption.</li>
+      </ol>
+    </section>
+
+    <section id="s11">
+      <h2><span class="num">11</span>API surface</h2>
+
+      <h3>Go HTTP / WebSocket</h3>
+      <div class="table-wrap">
+      <table>
+        <thead><tr><th>Method</th><th>Path</th><th>Purpose</th></tr></thead>
+        <tbody>
+          <tr><td><code>GET</code></td><td><code>/health</code></td><td>Liveness check.</td></tr>
+          <tr><td><code>GET</code></td><td><code>/ready</code></td><td>Readiness: 200 only when Hollywood engine is up and Convex is reachable.</td></tr>
+          <tr><td><code>GET</code></td><td><code>/ws</code></td><td>WebSocket upgrade. Requires <code>Authorization: Bearer &lt;jwt&gt;</code>.</td></tr>
+        </tbody>
+      </table>
+      </div>
+      <p><strong>WebSocket message types</strong> (JSON, <code>{type, ...}</code>):</p>
+      <ul>
+        <li>Inbound: <code>join</code>, <code>leave</code>, <code>send</code>, <code>typing_start</code>, <code>typing_stop</code>, <code>ping</code></li>
+        <li>Outbound: <code>ack</code>, <code>error</code>, <code>presence_update</code>, <code>typing_update</code>, <code>pong</code></li>
+      </ul>
+      <p>Schema for each documented in <code>internal/ws/protocol.go</code>.</p>
+
+      <h3>Convex functions</h3>
+      <p><code>convex/messages.ts</code>:</p>
+      <ul>
+        <li><code>send(args)</code> — mutation. Idempotent insert keyed by <code>(roomId, clientId)</code>.</li>
+        <li><code>list(args)</code> — query. Paginated by <code>(roomId, createdAt)</code>.</li>
+        <li><code>edit(args)</code> — mutation. Authorizes by sender. Sets <code>editedAt</code>.</li>
+        <li><code>softDelete(args)</code> — mutation. Authorizes by sender or room admin.</li>
+      </ul>
+      <p><code>convex/rooms.ts</code>: <code>create</code>, <code>list</code>, <code>get</code>, <code>addMember</code>, <code>removeMember</code>.</p>
+      <p><code>convex/users.ts</code>: <code>getOrCreateFromAuth(args)</code> — called on first authenticated connection.</p>
+      <div class="callout"><p>All mutations are deterministic and assume Convex's automatic transactional retry. None call third-party APIs (no <code>action</code> functions in v1).</p></div>
+    </section>
+
+    <section id="s12">
+      <h2><span class="num">12</span>Reliability, consistency &amp; ordering</h2>
+      <div class="table-wrap">
+      <table>
+        <thead><tr><th>Property</th><th>How achieved</th></tr></thead>
+        <tbody>
+          <tr><td><strong>In-room message ordering</strong></td><td>Single-writer RoomActor processes its mailbox serially.</td></tr>
+          <tr><td><strong>Idempotent sends</strong></td><td>Client-generated <code>clientId</code> + Convex unique index check before insert.</td></tr>
+          <tr><td><strong>At-least-once delivery to clients</strong></td><td>Convex subscriptions; clients dedupe by <code>_id</code> or <code>clientId</code>.</td></tr>
+          <tr><td><strong>Restart safety</strong></td><td>Stateless actor restart; idempotency makes retries safe.</td></tr>
+          <tr><td><strong>Backpressure</strong></td><td>Hollywood mailboxes are bounded; on overflow, send returns an error and client backs off. Default size TBD.</td></tr>
+          <tr><td><strong>Timeout discipline</strong></td><td>Every Convex call wrapped in <code>context.WithTimeout(5s)</code>. WS reads have a 60s deadline refreshed by <code>ping</code>.</td></tr>
+        </tbody>
+      </table>
+      </div>
+      <p><strong>What we explicitly do NOT guarantee</strong>:</p>
+      <ul>
+        <li>Cross-room ordering (each room is independent).</li>
+        <li>Exactly-once delivery to clients — clients must tolerate duplicates and dedupe.</li>
+        <li>Strict synchronous replication across regions (single-node v1).</li>
+      </ul>
+    </section>
+
+    <section id="s13">
+      <h2><span class="num">13</span>Auth &amp; security</h2>
+      <ul>
+        <li>External auth provider (Clerk or WorkOS — TBD) issues a JWT to the client.</li>
+        <li>Client presents JWT on WebSocket upgrade. Echo middleware validates the signature, extracts <code>sub</code> (auth ID).</li>
+        <li>On first connection for a new <code>sub</code>, Go server calls <code>users:getOrCreateFromAuth</code> to ensure a user row exists.</li>
+        <li>The per-request Convex client uses the user's JWT (Bearer auth) so mutations run with that user's identity. Convex functions enforce row-level access (e.g., <code>messages:send</code> checks membership for the target room).</li>
+        <li>A separate long-lived Convex client uses a deploy key (Convex auth scheme) for server-only operations like user provisioning.</li>
+        <li>Secrets (deploy key, JWT signing keys) loaded from environment. Never committed.</li>
+        <li>Rate limiting in RoomActor: cap at N sends/minute per user, configurable. Excess sends return an error frame; never silently dropped.</li>
+      </ul>
+    </section>
+
+    <section id="s14">
+      <h2><span class="num">14</span>Observability</h2>
+      <ul>
+        <li><strong>Structured logging</strong> via <code>log/slog</code>. JSON in production, key-value in dev. Every handler and actor adds <code>request_id</code>, <code>user_id</code>, <code>room_id</code> context where available.</li>
+        <li><strong>Metrics</strong> (Prometheus vs OTLP — TBD): <code>chat_messages_sent_total{room}</code>, <code>chat_convex_request_duration_seconds{op}</code>, <code>chat_active_connections</code>, <code>chat_rooms_active</code>, <code>chat_actor_mailbox_depth{actor}</code>.</li>
+        <li><strong>Tracing</strong>: OpenTelemetry spans around each Convex call and each WS message handler. Single trace per inbound WS message.</li>
+        <li><strong>Convex side</strong>: native dashboard for query/mutation perf, function logs, and subscription stats.</li>
+      </ul>
+    </section>
+
+    <section id="s15">
+      <h2><span class="num">15</span>Project structure</h2>
+      <p>Following go-blueprint conventions with chat-specific additions:</p>
+<pre><code>chatapp/
+├── cmd/
+│   └── api/
+│       └── main.go            # Wires engine, Echo server, Convex client
+├── internal/
+│   ├── server/
+│   │   ├── server.go          # Echo server lifecycle
+│   │   ├── routes.go          # Route registration
+│   │   ├── auth.go            # JWT middleware
+│   │   └── ws.go              # WebSocket upgrade handler
+│   ├── ws/
+│   │   ├── protocol.go        # Inbound/outbound message types
+│   │   └── connection.go      # ConnectionActor
+│   ├── room/
+│   │   ├── room.go            # RoomActor
+│   │   ├── registry.go        # RoomRegistry — lookup/spawn
+│   │   └── messages.go        # Actor message types
+│   ├── convex/
+│   │   ├── client.go          # HTTP client (Query/Mutation/Action)
+│   │   ├── errors.go          # Convex error envelope handling
+│   │   └── auth.go            # Bearer vs deploy-key helpers
+│   └── presence/              # (Milestone 2)
+│       └── presence.go
+├── convex/
+│   ├── schema.ts
+│   ├── messages.ts
+│   ├── rooms.ts
+│   ├── users.ts
+│   └── _generated/            # Convex codegen
+├── web/                       # Web client — framework TBD
+├── .air.toml
+├── .env.example
+├── docker-compose.yml
+├── Dockerfile
+├── go.mod
+├── Makefile
+└── PRD.md</code></pre>
+      <div class="callout"><p><strong>Package naming</strong> (per Go conventions): <code>room</code>, <code>ws</code>, <code>convex</code>, <code>presence</code> — not <code>models</code>, <code>utils</code>, <code>helpers</code>. Each package's name describes its responsibility.</p></div>
+    </section>
+
+    <section id="s16">
+      <h2><span class="num">16</span>Milestones</h2>
+
+      <h3>M0 — Project scaffold <span style="font-weight:400;color:var(--ink-faint)">(1–2 days)</span></h3>
+      <ul>
+        <li><code>go-blueprint</code> scaffold with Echo; Convex project initialized; <code>schema.ts</code> committed.</li>
+        <li>Custom Convex HTTP client with Query/Mutation, bearer + deploy-key auth, error handling.</li>
+        <li>Health check passing locally.</li>
+      </ul>
+
+      <h3>M1 — Send &amp; persist a message <span style="font-weight:400;color:var(--ink-faint)">(1 week)</span></h3>
+      <ul>
+        <li>Hollywood engine wired into Echo server; <code>RoomActor</code> with <code>Send</code> handler writing to Convex.</li>
+        <li><code>messages:send</code> mutation with idempotency check.</li>
+        <li>HTTP test endpoint (no WebSocket yet). Verify dedupe via Convex dashboard.</li>
+      </ul>
+
+      <h3>M2 — WebSocket &amp; real-time receive <span style="font-weight:400;color:var(--ink-faint)">(1 week)</span></h3>
+      <ul>
+        <li>WebSocket upgrade and ConnectionActor; web client subscribing via Convex SDK.</li>
+        <li>End-to-end demo: two browsers, one room, messages flow.</li>
+      </ul>
+
+      <h3>M3 — Auth <span style="font-weight:400;color:var(--ink-faint)">(3–5 days)</span></h3>
+      <ul>
+        <li>Integrate chosen provider; JWT middleware; user provisioning on first connect.</li>
+        <li>Convex auth integration so mutations run with user identity.</li>
+      </ul>
+
+      <h3>M4 — Presence &amp; typing <span style="font-weight:400;color:var(--ink-faint)">(3–5 days)</span></h3>
+      <ul>
+        <li><code>Join</code>/<code>Leave</code> flows; typing indicators via WS broadcast (not Convex).</li>
+        <li>Decide whether to fold PresenceActor into RoomActor.</li>
+      </ul>
+
+      <h3>M5 — Rate limiting, observability, hardening <span style="font-weight:400;color:var(--ink-faint)">(1 week)</span></h3>
+      <ul>
+        <li>Per-user rate limits; structured logging; metrics endpoint and dashboards.</li>
+        <li>Graceful shutdown: drain WS, stop new connections, let actors finish in-flight writes.</li>
+      </ul>
+
+      <h3>M6 — Polish &amp; deploy <span style="font-weight:400;color:var(--ink-faint)">(3–5 days)</span></h3>
+      <ul>
+        <li>Reconnect/catchup verification under simulated failures.</li>
+        <li>Dockerfile and deploy; final smoke tests against production.</li>
+      </ul>
+    </section>
+
+    <section id="s17">
+      <h2><span class="num">17</span>Open questions</h2>
+      <ol class="body-list">
+        <li><strong>Project name.</strong> Codename for the repo and product.</li>
+        <li><strong>Auth provider.</strong> Clerk vs WorkOS — driven by pricing, Convex integration, and whether DM-friendly user search is needed.</li>
+        <li><strong>Web client framework.</strong> Vanilla React, Next.js, TanStack Start, or other.</li>
+        <li><strong>Room types in v1.</strong> Only group rooms? Only DMs? Both?</li>
+        <li><strong>Multi-node story.</strong> When (if ever) do we address room actors across nodes? Defer until single-node hits real limits.</li>
+        <li><strong>Hosting.</strong> Fly.io is the leading candidate but unconfirmed.</li>
+        <li><strong>Logging library.</strong> <code>slog</code> vs <code>zap</code> vs <code>zerolog</code>. Default to <code>slog</code> unless perf demands otherwise.</li>
+        <li><strong>Hollywood version pin.</strong> Confirm latest stable and pin it.</li>
+        <li><strong>Image/file attachments.</strong> Out of v1, but decide now whether Convex file storage is the long-term answer so the schema can accommodate later.</li>
+        <li><strong>Mobile.</strong> Web-first v1, but does the protocol need mobile-friendly heartbeats from day one?</li>
+      </ol>
+    </section>
+
+    <section id="s18">
+      <h2><span class="num">18</span>Risks &amp; mitigations</h2>
+      <div class="table-wrap">
+      <table>
+        <thead><tr><th>Risk</th><th>Likelihood</th><th>Impact</th><th>Mitigation</th></tr></thead>
+        <tbody>
+          <tr><td>No official Go Convex client</td><td><span class="pill high">High</span></td><td><span class="pill med">Med</span></td><td>Build minimal HTTP client; accept that Go-side subscriptions aren't supported (not needed here).</td></tr>
+          <tr><td>Convex latency dominates perceived send latency</td><td><span class="pill med">Med</span></td><td><span class="pill med">Med</span></td><td>Optimistic UI; if p95 &gt; 250ms, consider actor-direct fan-out for live clients.</td></tr>
+          <tr><td>Single-node deployment becomes a bottleneck</td><td><span class="pill low">Low</span></td><td><span class="pill high">High</span></td><td>Architecture supports clustering via Hollywood remote actors. Defer until measured.</td></tr>
+          <tr><td>Actor crash loses in-memory <code>seen</code> cache</td><td><span class="pill med">Med</span></td><td><span class="pill low">Low</span></td><td>Convex unique index is authoritative; cache is optimization only.</td></tr>
+          <tr><td>Convex outage</td><td><span class="pill low">Low</span></td><td><span class="pill high">High</span></td><td>Document failure mode: server returns errors; clients show "reconnecting". No local queue in v1.</td></tr>
+          <tr><td>WebSocket connection storms after outage</td><td><span class="pill low">Low</span></td><td><span class="pill med">Med</span></td><td>Connection limit and exponential backoff documented for clients.</td></tr>
+        </tbody>
+      </table>
+      </div>
+    </section>
+
+    <section id="s19">
+      <h2><span class="num">19</span>Glossary</h2>
+      <ul>
+        <li><strong>Actor</strong> — an isolated unit of state and behavior in Hollywood. Processes one message at a time from its mailbox.</li>
+        <li><strong>Mailbox</strong> — per-actor queue of incoming messages. Bounded by default in Hollywood.</li>
+        <li><strong>PID</strong> — actor reference. Deterministic for named actors (e.g., <code>room/abc123</code>).</li>
+        <li><strong>Mutation (Convex)</strong> — a transactional write function. Runs serializably; auto-retries on conflict.</li>
+        <li><strong>Query (Convex)</strong> — a read function. Used by client subscriptions for live updates.</li>
+        <li><strong>Idempotency key (<code>clientId</code>)</strong> — client-generated UUID that uniquely identifies a logical send across retries.</li>
+        <li><strong>Subscription</strong> — client-side hook into a Convex query that auto-updates as underlying data changes.</li>
+        <li><strong>Single-writer-per-room</strong> — only the RoomActor for that room ever writes its messages. Sidesteps DB-level locking.</li>
+      </ul>
+    </section>
+
+    <section id="sA">
+      <h2>Appendix A · Decisions log</h2>
+      <div class="table-wrap">
+      <table>
+        <thead><tr><th>Date</th><th>Decision</th><th>Rationale</th></tr></thead>
+        <tbody>
+          <tr><td>2026-06-07</td><td>Use Convex (not Turso, MongoDB)</td><td>Built-in client subscriptions eliminate building a WebSocket fan-out layer for chat history.</td></tr>
+          <tr><td>2026-06-07</td><td>Stick with Go (not Rust)</td><td>Owner is daily Go developer; no perf justification for Rust in an I/O-bound app.</td></tr>
+          <tr><td>2026-06-07</td><td>Single writer per room via actor</td><td>Sidesteps DB locking; preserves ordering trivially.</td></tr>
+          <tr><td>2026-06-07</td><td>Convex pushes to clients; actor does NOT broadcast chat</td><td>Avoids duplicate delivery paths. Latency trade is acceptable.</td></tr>
+          <tr><td>2026-06-07</td><td>Custom Go HTTP client for Convex</td><td>No official SDK; HTTP API is small enough to wrap in ~80 lines.</td></tr>
+        </tbody>
+      </table>
+      </div>
+    </section>
+
+  </article>
+</div>
+
+<footer>
+  Chat App PRD · Draft v0.1 · 2026-06-07 · Go · Hollywood · Convex
+</footer>
+
+<script>
+  // Scroll-spy: highlight active TOC entry
+  const links = Array.from(document.querySelectorAll('nav.toc a'));
+  const map = new Map();
+  links.forEach(a => {
+    const id = a.getAttribute('href').slice(1);
+    const sec = document.getElementById(id);
+    if (sec) map.set(sec, a);
+  });
+  const obs = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        links.forEach(l => l.classList.remove('active'));
+        const a = map.get(e.target);
+        if (a) a.classList.add('active');
+      }
+    });
+  }, { rootMargin: '-10% 0px -80% 0px', threshold: 0 });
+  map.forEach((_, sec) => obs.observe(sec));
+</script>
+
+</body>
+</html>
