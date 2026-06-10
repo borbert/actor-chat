@@ -5,13 +5,13 @@ all: build test
 
 build:
 	@echo "Building..."
-	
-	
+
+
 	@go build -o main cmd/api/main.go
 
 # Run the application
 run:
-	@go run cmd/api/main.go
+	@set -a && . ./.env.local && set +a && go run cmd/api/main.go
 
 # Test the application
 test:
@@ -25,7 +25,8 @@ clean:
 
 # Live Reload
 watch:
-	@if command -v air > /dev/null; then \
+	@set -a && . ./.env.local && set +a; \
+	if command -v air > /dev/null; then \
             air; \
             echo "Watching...";\
         else \
