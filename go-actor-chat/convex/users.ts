@@ -3,7 +3,7 @@ import { v } from "convex/values";
 import { requireUser } from "./lib/identity";
 
 // getOrCreateFromAuth provisions a user row for the authenticated caller on
-// first connection (PRD §11, §13). Identity comes from the validated WorkOS
+// first connection (PRD §11, §13). Identity comes from the validated Clerk
 // JWT; displayName is an optional override used only at creation time.
 export const getOrCreateFromAuth = mutation({
   args: { displayName: v.optional(v.string()) },

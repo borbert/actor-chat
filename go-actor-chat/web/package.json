@@ -9,8 +9,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@convex-dev/workos": "^0.0.3",
-    "@workos-inc/authkit-react": "^0.16.1",
+    "@clerk/react": "^6.9.1",
     "convex": "^1.41.0",
     "react": "^19.2.7",
     "react-dom": "^19.2.7"

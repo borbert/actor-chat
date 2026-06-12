@@ -43,7 +43,7 @@ func (s *Server) wsHandler(c echo.Context) error {
 }
 
 // allowedOrigins returns WS origin patterns. Defaults cover local dev
-// (Vite on 5173); production sets ALLOWED_ORIGINS to its web origin(s).
+// (Vite on 5174); production sets ALLOWED_ORIGINS to its web origin(s).
 func allowedOrigins() []string {
 	if env := os.Getenv("ALLOWED_ORIGINS"); env != "" {
 		parts := strings.Split(env, ",")

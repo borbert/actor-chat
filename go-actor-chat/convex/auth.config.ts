@@ -1,22 +1,14 @@
-// WorkOS AuthKit issues JWTs from two issuers (SSO and User Management);
-// both must be registered (https://docs.convex.dev/auth/authkit/).
-// WORKOS_CLIENT_ID is set in the Convex dashboard per deployment.
-const clientId = process.env.WORKOS_CLIENT_ID;
-
+// Clerk issues JWTs from the app's Frontend API domain. The "convex" JWT
+// template (Clerk dashboard → JWT Templates → Convex preset) sets aud to
+// "convex", which is what applicationID matches against.
+// https://docs.convex.dev/auth/clerk
+// CLERK_JWT_ISSUER_DOMAIN is set on the Convex deployment:
+//   bunx convex env set CLERK_JWT_ISSUER_DOMAIN https://<your-app>.clerk.accounts.dev
 export default {
   providers: [
     {
-      type: "customJwt",
-      issuer: "https://api.workos.com/",
-      algorithm: "RS256",
-      applicationID: clientId,
-      jwks: `https://api.workos.com/sso/jwks/${clientId}`,
-    },
-    {
-      type: "customJwt",
-      issuer: `https://api.workos.com/user_management/${clientId}`,
-      algorithm: "RS256",
-      jwks: `https://api.workos.com/sso/jwks/${clientId}`,
+      domain: process.env.CLERK_JWT_ISSUER_DOMAIN,
+      applicationID: "convex",
     },
   ],
 };

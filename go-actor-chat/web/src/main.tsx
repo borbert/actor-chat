@@ -1,32 +1,29 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
-import { AuthKitProvider, useAuth } from "@workos-inc/authkit-react";
-import { ConvexProviderWithAuthKit } from "@convex-dev/workos";
+import { ClerkProvider, useAuth } from "@clerk/react";
+import { ConvexProviderWithClerk } from "convex/react-clerk";
 import { ConvexReactClient } from "convex/react";
 import App from "./App";
 import "./styles.css";
 
 const convexUrl = import.meta.env.VITE_CONVEX_URL as string | undefined;
-const workosClientId = import.meta.env.VITE_WORKOS_CLIENT_ID as
+const clerkPublishableKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY as
   | string
   | undefined;
-if (!convexUrl || !workosClientId) {
+if (!convexUrl || !clerkPublishableKey) {
   throw new Error(
-    "VITE_CONVEX_URL and VITE_WORKOS_CLIENT_ID are required (see web/.env.example)",
+    "VITE_CONVEX_URL and VITE_CLERK_PUBLISHABLE_KEY are required (see web/.env.example)",
   );
 }
 
 const convex = new ConvexReactClient(convexUrl);
-const redirectUri =
-  (import.meta.env.VITE_WORKOS_REDIRECT_URI as string | undefined) ??
-  window.location.origin;
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
-    <AuthKitProvider clientId={workosClientId} redirectUri={redirectUri}>
-      <ConvexProviderWithAuthKit client={convex} useAuth={useAuth}>
+    <ClerkProvider publishableKey={clerkPublishableKey} afterSignOutUrl="/">
+      <ConvexProviderWithClerk client={convex} useAuth={useAuth}>
         <App />
-      </ConvexProviderWithAuthKit>
-    </AuthKitProvider>
+      </ConvexProviderWithClerk>
+    </ClerkProvider>
   </StrictMode>,
 );

@@ -299,7 +299,7 @@ input:focus {
   display: flex;
   flex-direction: column;
   gap: 12px;
-  width: 320px;
+  width: min(420px, calc(100vw - 32px));
   background: var(--bg-raised);
   border: 1px solid var(--border);
   border-radius: 16px;
@@ -316,8 +316,15 @@ input:focus {
   color: var(--text-muted);
 }
 
+.auth-buttons {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+}
+
 .error-text {
   color: var(--danger);
   font-size: 13px;
   margin: 4px 0 0;
 }
+

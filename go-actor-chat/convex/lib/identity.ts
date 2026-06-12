@@ -4,7 +4,7 @@ import { Doc, Id } from "../_generated/dataModel";
 type Ctx = QueryCtx | MutationCtx;
 
 // requireUser resolves the authenticated caller to their users row. The
-// WorkOS JWT subject is stored as users.authId (PRD §13).
+// Clerk JWT subject is stored as users.authId (PRD §13).
 export async function requireUser(ctx: Ctx): Promise<Doc<"users">> {
   const identity = await ctx.auth.getUserIdentity();
   if (identity === null) {

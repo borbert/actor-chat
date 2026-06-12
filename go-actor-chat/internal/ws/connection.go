@@ -19,6 +19,11 @@ const (
 	writeTimeout = 10 * time.Second
 )
 
+// malformedFrame tells the connection actor the peer sent unparseable JSON.
+// A distinct message type (rather than a sentinel Frame) keeps internal
+// signals out of the wire protocol.
+type malformedFrame struct{}
+
 // Connection is the actor owning one WebSocket connection (PRD §9). All
 // writes to the socket go through its mailbox, so they are serialized; reads
 // happen in ReadLoop on the HTTP handler goroutine and are forwarded here as
@@ -52,6 +57,8 @@ func (cn *Connection) Receive(c *actor.Context) {
 		slog.Info("ws connection actor stopped", "user_id", cn.userID)
 	case Frame:
 		cn.handleFrame(c, msg)
+	case malformedFrame:
+		cn.write(Frame{Type: TypeError, Reason: "malformed JSON"})
 	case room.SendAck:
 		cn.write(Frame{
 			Type:      TypeAck,
@@ -135,7 +142,7 @@ func ReadLoop(ctx context.Context, conn *websocket.Conn, engine *actor.Engine, p
 		if err := json.Unmarshal(data, &f); err != nil {
 			// Routed through the actor so the error frame write is
 			// serialized with all other writes.
-			engine.Send(pid, Frame{Type: "malformed_json"})
+			engine.Send(pid, malformedFrame{})
 			continue
 		}
 		engine.Send(pid, f)

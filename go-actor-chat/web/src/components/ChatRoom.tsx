@@ -3,7 +3,7 @@ import { usePaginatedQuery, useQuery } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import { Id } from "../../../convex/_generated/dataModel";
 import { Frame } from "../lib/protocol";
-import { Identity } from "../lib/identity";
+import { Identity } from "../App";
 import { ChatState } from "../lib/chatState";
 import { SocketStatus } from "../lib/useChatSocket";
 import MessageInput from "./MessageInput";
