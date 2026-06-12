@@ -1,22 +1,53 @@
-import { useCallback, useReducer, useState } from "react";
+import { useCallback, useEffect, useReducer, useState } from "react";
+import { useAuth } from "@workos-inc/authkit-react";
+import { useConvexAuth, useMutation } from "convex/react";
+import { api } from "../../convex/_generated/api";
 import { Frame } from "./lib/protocol";
-import { Identity, clearIdentity, loadIdentity, saveIdentity } from "./lib/identity";
 import { useChatSocket } from "./lib/useChatSocket";
 import { chatReducer, initialChatState } from "./lib/chatState";
-import NamePrompt from "./components/NamePrompt";
+import SignIn from "./components/SignIn";
 import RoomList from "./components/RoomList";
 import ChatRoom from "./components/ChatRoom";
 
+export type Identity = {
+  userId: string;
+  name: string;
+};
+
 export default function App() {
-  const [identity, setIdentity] = useState<Identity | null>(loadIdentity);
+  const { user, isLoading, signOut, getAccessToken } = useAuth();
+  const { isAuthenticated } = useConvexAuth();
+  const getOrCreate = useMutation(api.users.getOrCreateFromAuth);
+
+  const [identity, setIdentity] = useState<Identity | null>(null);
   const [activeRoomId, setActiveRoomId] = useState<string | null>(null);
   const [chat, dispatch] = useReducer(chatReducer, initialChatState);
+
+  useEffect(() => {
+    if (!user || !isAuthenticated || identity) return;
+    let cancelled = false;
+    getOrCreate({ displayName: user.firstName ?? user.email ?? undefined })
+      .then((u) => {
+        if (!cancelled && u) {
+          setIdentity({ userId: u._id, name: u.displayName });
+        }
+      })
+      .catch((err) => console.error("user provisioning failed", err));
+    return () => {
+      cancelled = true;
+    };
+  }, [user, isAuthenticated, identity, getOrCreate]);
 
   const onFrame = useCallback((frame: Frame) => {
     dispatch({ kind: "frame", frame });
   }, []);
 
-  const { status, send } = useChatSocket(identity?.userId ?? null, onFrame);
+  const getToken = useCallback(
+    () => getAccessToken().catch(() => null),
+    [getAccessToken],
+  );
+
+  const { status, send } = useChatSocket(identity ? getToken : null, onFrame);
 
   const sendMessage = useCallback(
     (roomId: string, body: string) => {
@@ -27,19 +58,22 @@ export default function App() {
     [send],
   );
 
-  const handleIdentity = (id: Identity) => {
-    saveIdentity(id);
-    setIdentity(id);
-  };
-
-  const handleSignOut = () => {
-    clearIdentity();
-    setIdentity(null);
-    setActiveRoomId(null);
-  };
-
+  if (isLoading) {
+    return (
+      <div className="prompt-screen">
+        <p className="muted">Loading…</p>
+      </div>
+    );
+  }
+  if (!user) {
+    return <SignIn />;
+  }
   if (!identity) {
-    return <NamePrompt onIdentity={handleIdentity} />;
+    return (
+      <div className="prompt-screen">
+        <p className="muted">Setting up your account…</p>
+      </div>
+    );
   }
 
   return (
@@ -49,14 +83,10 @@ export default function App() {
           <h1>Actor Chat</h1>
           <span className={`conn-dot conn-${status}`} title={`socket: ${status}`} />
         </header>
-        <RoomList
-          userId={identity.userId}
-          activeRoomId={activeRoomId}
-          onSelect={setActiveRoomId}
-        />
+        <RoomList activeRoomId={activeRoomId} onSelect={setActiveRoomId} />
         <footer className="sidebar-footer">
           <span className="me">{identity.name}</span>
-          <button className="link" onClick={handleSignOut}>
+          <button className="link" onClick={() => void signOut()}>
             sign out
           </button>
         </footer>

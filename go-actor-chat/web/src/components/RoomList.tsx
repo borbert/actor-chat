@@ -4,17 +4,15 @@ import { api } from "../../../convex/_generated/api";
 import { Id } from "../../../convex/_generated/dataModel";
 
 export default function RoomList({
-  userId,
   activeRoomId,
   onSelect,
 }: {
-  userId: string;
   activeRoomId: string | null;
   onSelect: (roomId: string) => void;
 }) {
-  const rooms = useQuery(api.rooms.list, { userId: userId as Id<"users"> });
+  const rooms = useQuery(api.rooms.list, {});
   const createRoom = useMutation(api.rooms.create);
-  const addMember = useMutation(api.rooms.addMember);
+  const joinRoom = useMutation(api.rooms.join);
 
   const [newName, setNewName] = useState("");
   const [joinId, setJoinId] = useState("");
@@ -26,11 +24,7 @@ export default function RoomList({
     if (!name) return;
     setError(null);
     try {
-      const room = await createRoom({
-        name,
-        kind: "group",
-        userId: userId as Id<"users">,
-      });
+      const room = await createRoom({ name, kind: "group" });
       setNewName("");
       if (room) onSelect(room._id);
     } catch (err) {
@@ -44,10 +38,7 @@ export default function RoomList({
     if (!roomId) return;
     setError(null);
     try {
-      await addMember({
-        roomId: roomId as Id<"rooms">,
-        userId: userId as Id<"users">,
-      });
+      await joinRoom({ roomId: roomId as Id<"rooms"> });
       setJoinId("");
       onSelect(roomId);
     } catch (err) {

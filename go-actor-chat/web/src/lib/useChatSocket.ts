@@ -6,11 +6,8 @@ export type SocketStatus = "connecting" | "open" | "closed";
 const PING_INTERVAL_MS = 25_000;
 const MAX_BACKOFF_MS = 10_000;
 
-// useChatSocket maintains one app WebSocket to the Go server with automatic
-// reconnect (PRD §10.4) and an app-level ping to keep the 60s read deadline
-// fresh. Inbound frames are delivered to onFrame.
 export function useChatSocket(
-  userId: string | null,
+  getToken: (() => Promise<string | null>) | null,
   onFrame: (frame: Frame) => void,
 ) {
   const [status, setStatus] = useState<SocketStatus>("closed");
@@ -19,17 +16,32 @@ export function useChatSocket(
   onFrameRef.current = onFrame;
 
   useEffect(() => {
-    if (!userId) return;
+    if (!getToken) return;
 
     let disposed = false;
     let attempt = 0;
     let pingTimer: ReturnType<typeof setInterval> | undefined;
     let reconnectTimer: ReturnType<typeof setTimeout> | undefined;
 
-    const connect = () => {
+    const scheduleReconnect = () => {
+      if (disposed) return;
+      const backoff = Math.min(1000 * 2 ** attempt, MAX_BACKOFF_MS);
+      attempt += 1;
+      reconnectTimer = setTimeout(() => void connect(), backoff);
+    };
+
+    const connect = async () => {
       setStatus("connecting");
+      const token = await getToken();
+      if (disposed) return;
+      if (!token) {
+        setStatus("closed");
+        scheduleReconnect();
+        return;
+      }
+
       const ws = new WebSocket(
-        `${WS_BASE}/ws?user=${encodeURIComponent(userId)}`,
+        `${WS_BASE}/ws?token=${encodeURIComponent(token)}`,
       );
       wsRef.current = ws;
 
@@ -54,15 +66,11 @@ export function useChatSocket(
       ws.onclose = () => {
         clearInterval(pingTimer);
         setStatus("closed");
-        if (!disposed) {
-          const backoff = Math.min(1000 * 2 ** attempt, MAX_BACKOFF_MS);
-          attempt += 1;
-          reconnectTimer = setTimeout(connect, backoff);
-        }
+        scheduleReconnect();
       };
     };
 
-    connect();
+    void connect();
     return () => {
       disposed = true;
       clearInterval(pingTimer);
@@ -70,7 +78,7 @@ export function useChatSocket(
       wsRef.current?.close();
       wsRef.current = null;
     };
-  }, [userId]);
+  }, [getToken]);
 
   const send = useCallback((frame: Frame) => {
     const ws = wsRef.current;
