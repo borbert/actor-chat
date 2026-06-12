@@ -4,6 +4,7 @@ go 1.25.6
 
 require (
 	github.com/anthdm/hollywood v1.0.5
+	github.com/coder/websocket v1.8.14
 	github.com/joho/godotenv v1.5.1
 	github.com/labstack/echo/v4 v4.15.2
 )
