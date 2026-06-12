@@ -44,6 +44,15 @@ func WithDeployKey(key string) Option {
 	}
 }
 
+// WithAuth returns a shallow copy of the client that authenticates as the
+// bearer of token (PRD §13: mutations run with the user's identity). Cheap:
+// copies share the underlying http.Client.
+func (c *Client) WithAuth(token string) *Client {
+	clone := *c
+	clone.authToken = token
+	return &clone
+}
+
 // New creates a Convex HTTP client for the deployment URL.
 func New(baseURL string, opts ...Option) *Client {
 	c := &Client{

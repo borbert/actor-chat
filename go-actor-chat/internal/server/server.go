@@ -1,6 +1,7 @@
 package server
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"os"
@@ -26,7 +27,8 @@ type Server struct {
 	convex  *convex.Client // nil until CONVEX_URL is configured
 	engine  *actor.Engine
 	pingPID *actor.PID
-	rooms   *room.Registry // nil until CONVEX_URL is configured
+	rooms   *room.Registry  // nil until CONVEX_URL is configured
+	auth    *TokenValidator // nil until CLERK_JWT_ISSUER_DOMAIN is configured
 }
 
 // New builds the HTTP server, wiring middleware, dependencies, and routes.
@@ -58,6 +60,16 @@ func New() (*http.Server, error) {
 	if url := os.Getenv("CONVEX_URL"); url != "" {
 		s.convex = convex.New(url, convex.WithTimeout(5*time.Second))
 		s.rooms = room.NewRegistry(eng, room.NewConvexStore(s.convex))
+	}
+
+	// JWT validation for the WS upgrade (PRD §13). The JWKS cache lives as
+	// long as the process, hence context.Background().
+	if issuer := os.Getenv("CLERK_JWT_ISSUER_DOMAIN"); issuer != "" {
+		validator, err := NewTokenValidator(context.Background(), issuer)
+		if err != nil {
+			return nil, fmt.Errorf("clerk token validator: %w", err)
+		}
+		s.auth = validator
 	}
 
 	s.engine = eng

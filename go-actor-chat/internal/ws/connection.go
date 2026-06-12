@@ -28,19 +28,30 @@ type malformedFrame struct{}
 // writes to the socket go through its mailbox, so they are serialized; reads
 // happen in ReadLoop on the HTTP handler goroutine and are forwarded here as
 // Frame messages.
+//
+// token is a lease: Clerk JWTs expire in ~60s while connections live for
+// hours, so the client mails a fresh one on each ping and the actor swaps
+// its private copy. No shared state, no locks — renewal is just a message.
 type Connection struct {
 	conn     *websocket.Conn
 	userID   string
+	token    string
+	validate func(string) (string, error)
 	registry *room.Registry
 	joined   map[string]bool
 }
 
 // NewConnection returns a Producer for a connection actor bound to conn.
-func NewConnection(conn *websocket.Conn, userID string, registry *room.Registry) actor.Producer {
+// validate is the server's JWT check (passed as a func to keep this package
+// free of an import on the server package); userID and token were already
+// validated at upgrade.
+func NewConnection(conn *websocket.Conn, userID, token string, validate func(string) (string, error), registry *room.Registry) actor.Producer {
 	return func() actor.Receiver {
 		return &Connection{
 			conn:     conn,
 			userID:   userID,
+			token:    token,
+			validate: validate,
 			registry: registry,
 			joined:   make(map[string]bool),
 		}
@@ -80,6 +91,18 @@ func (cn *Connection) Receive(c *actor.Context) {
 func (cn *Connection) handleFrame(c *actor.Context, f Frame) {
 	switch f.Type {
 	case TypePing:
+		if f.Token != "" {
+			// Refresh the lease. Same-subject check: a connection's
+			// identity is fixed at upgrade; a token for someone else is
+			// an error, not a re-login.
+			sub, err := cn.validate(f.Token)
+			if err != nil || sub != cn.userID {
+				cn.write(Frame{Type: TypeError, Reason: "token refresh rejected"})
+				cn.write(Frame{Type: TypePong})
+				return
+			}
+			cn.token = f.Token
+		}
 		cn.write(Frame{Type: TypePong})
 	case TypeJoin:
 		if f.RoomID == "" {
@@ -103,6 +126,7 @@ func (cn *Connection) handleFrame(c *actor.Context, f Frame) {
 			UserID:   cn.userID,
 			Body:     f.Body,
 			ClientID: f.ClientID,
+			Token:    cn.token,
 		})
 	case TypeTypingStart, TypeTypingStop:
 		// Implemented in M4.

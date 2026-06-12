@@ -71,7 +71,7 @@ func (a *Actor) handleSend(c *actor.Context, msg Send) {
 	ctx, cancel := context.WithTimeout(context.Background(), convexTimeout)
 	defer cancel()
 
-	persisted, err := a.store.SendMessage(ctx, a.roomID, msg.UserID, msg.Body, msg.ClientID)
+	persisted, err := a.store.SendMessage(ctx, a.roomID, msg.Body, msg.ClientID, msg.Token)
 	if err != nil {
 		slog.Error("room send failed", "room_id", a.roomID, "client_id", msg.ClientID, "err", err)
 		c.Respond(SendError{RoomID: a.roomID, ClientID: msg.ClientID, Reason: err.Error()})

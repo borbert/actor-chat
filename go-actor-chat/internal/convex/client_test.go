@@ -115,3 +115,28 @@ func TestAuthHeaders(t *testing.T) {
 		t.Errorf("Convex-Deploy-Key = %q, want deploy456", gotDeploy)
 	}
 }
+
+func TestWithAuthClone(t *testing.T) {
+	var gotAuth string
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		gotAuth = r.Header.Get("Authorization")
+		json.NewEncoder(w).Encode(map[string]any{"status": "success", "value": nil})
+	}))
+	defer srv.Close()
+
+	base := New(srv.URL)
+	if err := base.WithAuth("user-jwt").Query(context.Background(), "health:ping", nil, nil); err != nil {
+		t.Fatalf("query: %v", err)
+	}
+	if gotAuth != "Bearer user-jwt" {
+		t.Errorf("Authorization = %q, want Bearer user-jwt", gotAuth)
+	}
+
+	// The clone must not leak auth back into the base client.
+	if err := base.Query(context.Background(), "health:ping", nil, nil); err != nil {
+		t.Fatalf("query: %v", err)
+	}
+	if gotAuth != "" {
+		t.Errorf("base client sent Authorization = %q, want none", gotAuth)
+	}
+}

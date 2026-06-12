@@ -1,6 +1,7 @@
 package server
 
 import (
+	"log/slog"
 	"net/http"
 	"os"
 	"strings"
@@ -12,17 +13,26 @@ import (
 )
 
 // wsHandler upgrades to a WebSocket and runs the connection's read loop until
-// the peer disconnects (PRD §10.3). Identity comes from the "user" query
-// parameter as a dev-mode stand-in until M3 replaces it with a WorkOS JWT
-// (browsers cannot set headers on WebSocket requests).
+// the peer disconnects (PRD §10.3). Identity comes from a Clerk JWT in the
+// "token" query parameter (browsers cannot set headers on WebSocket
+// requests), validated against the instance JWKS (PRD §13).
 func (s *Server) wsHandler(c echo.Context) error {
 	if s.rooms == nil {
 		return echo.NewHTTPError(http.StatusServiceUnavailable, "CONVEX_URL not configured")
 	}
+	if s.auth == nil {
+		return echo.NewHTTPError(http.StatusServiceUnavailable, "CLERK_JWT_ISSUER_DOMAIN not configured")
+	}
 
-	userID := c.QueryParam("user")
-	if userID == "" {
-		return echo.NewHTTPError(http.StatusUnauthorized, "missing user identity")
+	token := c.QueryParam("token")
+	if token == "" {
+		return echo.NewHTTPError(http.StatusUnauthorized, "missing token")
+	}
+	userID, err := s.auth.Validate(token)
+	if err != nil {
+		// Detail stays server-side; the client only learns "invalid".
+		slog.Warn("ws token rejected", "err", err)
+		return echo.NewHTTPError(http.StatusUnauthorized, "invalid token")
 	}
 
 	conn, err := websocket.Accept(c.Response(), c.Request(), &websocket.AcceptOptions{
@@ -33,7 +43,7 @@ func (s *Server) wsHandler(c echo.Context) error {
 		return nil
 	}
 
-	pid := s.engine.Spawn(ws.NewConnection(conn, userID, s.rooms), "conn")
+	pid := s.engine.Spawn(ws.NewConnection(conn, userID, token, s.auth.Validate, s.rooms), "conn")
 	ws.ReadLoop(c.Request().Context(), conn, s.engine, pid)
 
 	// Read loop ended: peer closed or timed out. Stop the actor (it closes

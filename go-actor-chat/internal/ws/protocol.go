@@ -24,6 +24,10 @@ type Frame struct {
 
 	// typing_update
 	Typing bool `json:"typing,omitempty"`
+
+	// ping: optional fresh JWT so long-lived connections outlive the ~60s
+	// token lifetime (PRD §13). Never sent by the server.
+	Token string `json:"token,omitempty"`
 }
 
 // Inbound frame types.

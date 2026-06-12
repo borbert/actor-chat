@@ -14,15 +14,17 @@ import (
 // stubStore records calls and returns canned results, so actor behavior can
 // be tested without a Convex deployment.
 type stubStore struct {
-	mu    sync.Mutex
-	calls []string // clientIds in call order
-	err   error
+	mu     sync.Mutex
+	calls  []string // clientIds in call order
+	tokens []string // tokens in call order
+	err    error
 }
 
-func (s *stubStore) SendMessage(_ context.Context, roomID, userID, body, clientID string) (Message, error) {
+func (s *stubStore) SendMessage(_ context.Context, roomID, body, clientID, token string) (Message, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.calls = append(s.calls, clientID)
+	s.tokens = append(s.tokens, token)
 	if s.err != nil {
 		return Message{}, s.err
 	}
@@ -70,7 +72,7 @@ func TestRoomActorSend(t *testing.T) {
 			store := &stubStore{err: tt.storeErr}
 			pid := eng.Spawn(NewActor("r1", store), actorKind, actor.WithID("r1"))
 
-			res := sendAndWait(t, eng, pid, Send{UserID: "u1", Body: "hi", ClientID: "c1"})
+			res := sendAndWait(t, eng, pid, Send{UserID: "u1", Body: "hi", ClientID: "c1", Token: "tok1"})
 
 			if tt.wantAck {
 				ack, ok := res.(SendAck)
@@ -82,6 +84,14 @@ func TestRoomActorSend(t *testing.T) {
 				}
 				if ack.ClientID != "c1" {
 					t.Errorf("clientId = %q, want c1", ack.ClientID)
+				}
+				// The sender's token must reach the store: that is what
+				// makes the Convex write run as the user (PRD §13).
+				store.mu.Lock()
+				gotToken := store.tokens[0]
+				store.mu.Unlock()
+				if gotToken != "tok1" {
+					t.Errorf("store token = %q, want tok1", gotToken)
 				}
 			} else {
 				sendErr, ok := res.(SendError)

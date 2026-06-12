@@ -15,9 +15,10 @@ type Message struct {
 }
 
 // Store persists chat messages durably. Defined here (at the consumer) so
-// tests can stub it without a real Convex deployment.
+// tests can stub it without a real Convex deployment. token is the sender's
+// bearer JWT; the backend derives the writing user from it.
 type Store interface {
-	SendMessage(ctx context.Context, roomID, userID, body, clientID string) (Message, error)
+	SendMessage(ctx context.Context, roomID, body, clientID, token string) (Message, error)
 }
 
 // ConvexStore implements Store on top of the Convex HTTP client by calling
@@ -30,15 +31,16 @@ func NewConvexStore(client *convex.Client) *ConvexStore {
 	return &ConvexStore{client: client}
 }
 
-func (s *ConvexStore) SendMessage(ctx context.Context, roomID, userID, body, clientID string) (Message, error) {
+func (s *ConvexStore) SendMessage(ctx context.Context, roomID, body, clientID, token string) (Message, error) {
 	var msg Message
+	// No userId arg: messages:send derives the sender from the JWT and
+	// rejects unknown args.
 	args := map[string]any{
 		"roomId":   roomID,
-		"userId":   userID,
 		"body":     body,
 		"clientId": clientID,
 	}
-	if err := s.client.Mutation(ctx, "messages:send", args, &msg); err != nil {
+	if err := s.client.WithAuth(token).Mutation(ctx, "messages:send", args, &msg); err != nil {
 		return Message{}, fmt.Errorf("messages:send: %w", err)
 	}
 	return msg, nil
