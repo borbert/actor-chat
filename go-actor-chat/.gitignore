@@ -38,6 +38,11 @@ main
 
 /node_modules
 /dist
+*.tsbuildinfo
 
-
-
+agents.md
+claude.md
+prd.html
+convex/AGENTS.md
+convex/CLAUDE.md
+convex/.agents/

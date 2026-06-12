@@ -9,6 +9,10 @@
  */
 
 import type * as health from "../health.js";
+import type * as lib_identity from "../lib/identity.js";
+import type * as messages from "../messages.js";
+import type * as rooms from "../rooms.js";
+import type * as users from "../users.js";
 
 import type {
   ApiFromModules,
@@ -18,6 +22,10 @@ import type {
 
 declare const fullApi: ApiFromModules<{
   health: typeof health;
+  "lib/identity": typeof lib_identity;
+  messages: typeof messages;
+  rooms: typeof rooms;
+  users: typeof users;
 }>;
 
 /**
