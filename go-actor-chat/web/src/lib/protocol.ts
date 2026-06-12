@@ -10,6 +10,8 @@ export type Frame = {
   reason?: string;
   users?: string[];
   typing?: boolean;
+  // ping: fresh JWT so long-lived connections outlive the ~60s token life.
+  token?: string;
 };
 
 export const WS_BASE =

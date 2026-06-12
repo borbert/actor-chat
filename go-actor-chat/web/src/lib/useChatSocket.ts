@@ -49,9 +49,17 @@ export function useChatSocket(
         attempt = 0;
         setStatus("open");
         pingTimer = setInterval(() => {
-          if (ws.readyState === WebSocket.OPEN) {
-            ws.send(JSON.stringify({ type: "ping" }));
-          }
+          if (ws.readyState !== WebSocket.OPEN) return;
+          // Attach a fresh token: the server-side connection holds it as a
+          // lease for Convex writes, and it expires in ~60s. Clerk caches
+          // tokens client-side, so this is usually no network round trip.
+          void getToken().then((token) => {
+            if (ws.readyState === WebSocket.OPEN) {
+              ws.send(
+                JSON.stringify({ type: "ping", ...(token ? { token } : {}) }),
+              );
+            }
+          });
         }, PING_INTERVAL_MS);
       };
 
