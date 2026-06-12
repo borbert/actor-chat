@@ -1,24 +1,14 @@
 package ping
 
+import "time"
 
-import (
-	_ "github.com/anthdm/hollywood/actor"
-	"time"
-
-)
-
-// PingActor is the actor that handles ping messages
-
-// Ping message
+// Ping asks the ping actor for a liveness reply.
 type Ping struct {
 	Nonce string
 }
 
-// Pong message
+// Pong is the reply to a Ping, echoing the nonce.
 type Pong struct {
 	Nonce string
-	At time.Time
+	At    time.Time
 }
-
-
-

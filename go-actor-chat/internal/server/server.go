@@ -12,21 +12,21 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 
+	"github.com/anthdm/hollywood/actor"
 	"github.com/borbert/actor-chat/go-actor-chat/internal/convex"
 	"github.com/borbert/actor-chat/go-actor-chat/internal/ping"
-	"github.com/anthdm/hollywood/actor"
-
+	"github.com/borbert/actor-chat/go-actor-chat/internal/room"
 )
 
 // Server holds the Echo instance and shared dependencies. Handlers are methods
 // on Server so they can reach dependencies without package-level globals.
 type Server struct {
-	port   int
-	echo   *echo.Echo
-	convex *convex.Client // nil until CONVEX_URL is configured
-	engine *actor.Engine
+	port    int
+	echo    *echo.Echo
+	convex  *convex.Client // nil until CONVEX_URL is configured
+	engine  *actor.Engine
 	pingPID *actor.PID
-
+	rooms   *room.Registry // nil until CONVEX_URL is configured
 }
 
 // New builds the HTTP server, wiring middleware, dependencies, and routes.
@@ -57,8 +57,8 @@ func New() (*http.Server, error) {
 	// second client built with convex.WithDeployKey(...).
 	if url := os.Getenv("CONVEX_URL"); url != "" {
 		s.convex = convex.New(url, convex.WithTimeout(5*time.Second))
+		s.rooms = room.NewRegistry(eng, room.NewConvexStore(s.convex))
 	}
-
 
 	s.engine = eng
   	s.pingPID = eng.Spawn(ping.New, "ping") // ping.New is the producer; "ping" is the actor id

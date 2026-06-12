@@ -15,9 +15,7 @@ import (
 func (s *Server) RegisterRoutes() {
 	s.echo.GET("/health", s.healthHandler)
 	s.echo.GET("/ready", s.readyHandler)
-
-	// Future (see PRD §11):
-	//   s.echo.GET("/ws", s.wsHandler)   // M2 — WebSocket upgrade
+	s.echo.GET("/ws", s.wsHandler)
 }
 
 // healthHandler is a liveness probe: the process is up and serving.
@@ -74,3 +72,4 @@ func (s *Server) readyHandler(c echo.Context) error {
 		"actor":      "reachable",
 	})
 }
+
