@@ -28,11 +28,20 @@ func (s *Server) wsHandler(c echo.Context) error {
 	if token == "" {
 		return echo.NewHTTPError(http.StatusUnauthorized, "missing token")
 	}
-	userID, err := s.auth.Validate(token)
+	sub, err := s.auth.Validate(token)
 	if err != nil {
 		// Detail stays server-side; the client only learns "invalid".
 		slog.Warn("ws token rejected", "err", err)
 		return echo.NewHTTPError(http.StatusUnauthorized, "invalid token")
+	}
+
+	// Resolve the Convex users._id once, before the upgrade, while returning
+	// an HTTP error is still possible. 503 (not 401): the token was valid;
+	// Convex was unreachable or misbehaving.
+	userID, err := s.resolveUser(c.Request().Context(), token)
+	if err != nil {
+		slog.Error("ws user resolution failed", "err", err)
+		return echo.NewHTTPError(http.StatusServiceUnavailable, "user lookup failed")
 	}
 
 	conn, err := websocket.Accept(c.Response(), c.Request(), &websocket.AcceptOptions{
@@ -43,7 +52,11 @@ func (s *Server) wsHandler(c echo.Context) error {
 		return nil
 	}
 
-	pid := s.engine.Spawn(ws.NewConnection(conn, userID, token, s.auth.Validate, s.rooms), "conn")
+	pid := s.engine.Spawn(ws.NewConnection(conn, ws.Identity{
+		UserID: userID,
+		AuthID: sub,
+		Token:  token,
+	}, s.auth.Validate, s.rooms), "conn")
 	ws.ReadLoop(c.Request().Context(), conn, s.engine, pid)
 
 	// Read loop ended: peer closed or timed out. Stop the actor (it closes

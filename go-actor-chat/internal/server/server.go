@@ -29,6 +29,11 @@ type Server struct {
 	pingPID *actor.PID
 	rooms   *room.Registry  // nil until CONVEX_URL is configured
 	auth    *TokenValidator // nil until CLERK_JWT_ISSUER_DOMAIN is configured
+
+	// resolveUser exchanges a validated token for the caller's Convex
+	// users._id (nil until CONVEX_URL is configured). A field so tests can
+	// stub it without Convex.
+	resolveUser func(ctx context.Context, token string) (string, error)
 }
 
 // New builds the HTTP server, wiring middleware, dependencies, and routes.
@@ -60,6 +65,7 @@ func New() (*http.Server, error) {
 	if url := os.Getenv("CONVEX_URL"); url != "" {
 		s.convex = convex.New(url, convex.WithTimeout(5*time.Second))
 		s.rooms = room.NewRegistry(eng, room.NewConvexStore(s.convex))
+		s.resolveUser = ProvisionUser(s.convex)
 	}
 
 	// JWT validation for the WS upgrade (PRD §13). The JWKS cache lives as

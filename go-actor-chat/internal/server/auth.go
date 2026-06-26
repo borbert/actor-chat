@@ -7,6 +7,8 @@ import (
 
 	"github.com/MicahParks/keyfunc/v3"
 	"github.com/golang-jwt/jwt/v5"
+
+	"github.com/borbert/actor-chat/go-actor-chat/internal/convex"
 )
 
 // TokenValidator verifies Clerk-issued JWTs against the instance JWKS
@@ -45,4 +47,24 @@ func (v *TokenValidator) Validate(tokenString string) (string, error) {
 		return "", fmt.Errorf("token has no subject")
 	}
 	return sub, nil
+}
+
+// ProvisionUser exchanges a validated token for the caller's Convex
+// users._id, creating the row on first contact. Idempotent — the web client
+// calls the same mutation at sign-in (PRD §11, §13). Returned as a func, not
+// a method, so the WS handler can hold it as a field the tests can stub
+// without a real Convex deployment.
+func ProvisionUser(client *convex.Client) func(ctx context.Context, token string) (string, error) {
+	return func(ctx context.Context, token string) (string, error) {
+		var user struct {
+			ID string `json:"_id"`
+		}
+		if err := client.WithAuth(token).Mutation(ctx, "users:getOrCreateFromAuth", map[string]any{}, &user); err != nil {
+			return "", fmt.Errorf("users:getOrCreateFromAuth: %w", err)
+		}
+		if user.ID == "" {
+			return "", fmt.Errorf("users:getOrCreateFromAuth returned no _id")
+		}
+		return user.ID, nil
+	}
 }

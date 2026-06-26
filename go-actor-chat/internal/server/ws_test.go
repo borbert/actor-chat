@@ -9,6 +9,7 @@ import (
 	"math/big"
 	"net/http"
 	"net/http/httptest"
+	"slices"
 	"strings"
 	"testing"
 	"time"
@@ -99,6 +100,11 @@ func newWSTestServer(t *testing.T) (*httptest.Server, *testAuth) {
 	auth := newTestAuth(t)
 	e := echo.New()
 	s := &Server{echo: e, engine: eng, rooms: room.NewRegistry(eng, fakeStore{}), auth: auth.validator}
+	// Stub resolver: derive a fake Convex id from the validated sub, no Convex.
+	s.resolveUser = func(_ context.Context, token string) (string, error) {
+		sub, err := auth.validator.Validate(token)
+		return "cv_" + sub, err
+	}
 	s.RegisterRoutes()
 	srv := httptest.NewServer(e)
 	t.Cleanup(srv.Close)
@@ -218,6 +224,74 @@ func TestWSSendAck(t *testing.T) {
 	if got.MessageID != "msg1" || got.ClientID != "c1" || got.RoomID != "r1" {
 		t.Errorf("unexpected ack: %+v", got)
 	}
+}
+
+// readUntil reads frames from conn until match returns true or the deadline
+// passes. Presence/typing broadcasts can be preceded by intermediate frames,
+// so tests read until the frame they want rather than asserting on the first.
+func readUntil(t *testing.T, conn *websocket.Conn, match func(ws.Frame) bool) ws.Frame {
+	t.Helper()
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	for {
+		_, data, err := conn.Read(ctx)
+		if err != nil {
+			t.Fatalf("read: %v", err)
+		}
+		var f ws.Frame
+		if err := json.Unmarshal(data, &f); err != nil {
+			t.Fatalf("unmarshal: %v", err)
+		}
+		if match(f) {
+			return f
+		}
+	}
+}
+
+func presenceIs(roomID string, users ...string) func(ws.Frame) bool {
+	return func(f ws.Frame) bool {
+		return f.Type == ws.TypePresenceUpdate && f.RoomID == roomID && slices.Equal(f.Users, users)
+	}
+}
+
+func TestWSPresenceAndTyping(t *testing.T) {
+	srv, auth := newWSTestServer(t)
+	conn1 := dialWS(t, srv, "?token="+auth.mint(t, "u1", time.Minute))
+	conn2 := dialWS(t, srv, "?token="+auth.mint(t, "u2", time.Minute))
+
+	writeFrame(t, conn1, ws.Frame{Type: ws.TypeJoin, RoomID: "r1"})
+	writeFrame(t, conn2, ws.Frame{Type: ws.TypeJoin, RoomID: "r1"})
+
+	// Both eventually see the full online set (drains queued presence frames).
+	readUntil(t, conn1, presenceIs("r1", "cv_u1", "cv_u2"))
+	readUntil(t, conn2, presenceIs("r1", "cv_u1", "cv_u2"))
+
+	// u1 starts typing → u2 sees it.
+	writeFrame(t, conn1, ws.Frame{Type: ws.TypeTypingStart, RoomID: "r1"})
+	got := readUntil(t, conn2, func(f ws.Frame) bool { return f.Type == ws.TypeTypingUpdate })
+	if got.UserID != "cv_u1" || !got.Typing {
+		t.Errorf("typing update = %+v, want userId cv_u1 typing true", got)
+	}
+
+	// Not echoed to sender: conn1's next frame is the pong, not a typing frame.
+	writeFrame(t, conn1, ws.Frame{Type: ws.TypePing})
+	if got := readFrame(t, conn1); got.Type != ws.TypePong {
+		t.Errorf("sender's next frame = %q, want pong (typing must not echo to sender)", got.Type)
+	}
+}
+
+func TestWSLeaveOnClose(t *testing.T) {
+	srv, auth := newWSTestServer(t)
+	conn1 := dialWS(t, srv, "?token="+auth.mint(t, "u1", time.Minute))
+	conn2 := dialWS(t, srv, "?token="+auth.mint(t, "u2", time.Minute))
+
+	writeFrame(t, conn1, ws.Frame{Type: ws.TypeJoin, RoomID: "r1"})
+	writeFrame(t, conn2, ws.Frame{Type: ws.TypeJoin, RoomID: "r1"})
+	readUntil(t, conn2, presenceIs("r1", "cv_u1", "cv_u2"))
+
+	// conn1 drops → its actor.Stopped mails Leave, so conn2 sees u1 gone.
+	conn1.Close(websocket.StatusNormalClosure, "")
+	readUntil(t, conn2, presenceIs("r1", "cv_u2"))
 }
 
 func TestWSSendValidation(t *testing.T) {
