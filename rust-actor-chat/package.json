@@ -1,0 +1,7 @@
+{
+    "name": "rust-actor-chat-convex",
+    "private": true,
+    "dependencies": {
+      "convex": "^1.41.0"
+    }
+  }
