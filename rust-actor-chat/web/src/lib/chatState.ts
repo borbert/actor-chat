@@ -26,10 +26,13 @@ export const initialChatState: ChatState = {
 export type ChatAction =
   | { kind: "sent"; clientId: string; roomId: string; body: string }
   | { kind: "frame"; frame: Frame }
-  | { kind: "settle"; clientIds: string[] };
+  | { kind: "settle"; clientIds: string[] }
+  | { kind: "reset" };
 
 export function chatReducer(state: ChatState, action: ChatAction): ChatState {
   switch (action.kind) {
+    case "reset":
+      return initialChatState;
     case "sent":
       return {
         ...state,

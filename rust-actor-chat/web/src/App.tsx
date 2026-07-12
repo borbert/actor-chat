@@ -2,10 +2,18 @@ import { useCallback, useEffect, useReducer, useRef, useState } from "react";
 import { Show, UserButton, useAuth, useUser } from "@clerk/react";
 import { useConvexAuth, useMutation } from "convex/react";
 import { api } from "../../convex/_generated/api";
+import {
+  IMPLEMENTATIONS,
+  clearImplementation,
+  loadImplementation,
+  saveImplementation,
+  type ImplementationId,
+} from "./lib/backends";
 import { Frame } from "./lib/protocol";
 import { useChatSocket } from "./lib/useChatSocket";
 import { chatReducer, initialChatState } from "./lib/chatState";
 import SignIn from "./components/SignIn";
+import ImplementationPicker from "./components/ImplementationPicker";
 import RoomList from "./components/RoomList";
 import ChatRoom from "./components/ChatRoom";
 
@@ -36,9 +44,10 @@ function AuthedApp() {
   const [identity, setIdentity] = useState<Identity | null>(null);
   const [provisionError, setProvisionError] = useState<string | null>(null);
   const provisioningRef = useRef(false);
+  const [implementationId, setImplementationId] =
+    useState<ImplementationId | null>(() => loadImplementation());
   const [activeRoomId, setActiveRoomId] = useState<string | null>(null);
   const [chat, dispatch] = useReducer(chatReducer, initialChatState);
-
 
   // Provision the Convex user row once Convex accepts the Clerk JWT
   // (PRD §13: users:getOrCreateFromAuth on first authenticated connection).
@@ -67,8 +76,20 @@ function AuthedApp() {
     void provision();
   }, [identity, convexAuthLoading, isAuthenticated, provision]);
 
-  // Token for the Go WebSocket. Uses the same "convex" template so M3's Go
-  // middleware can validate one token shape against Clerk's JWKS.
+  const selectImplementation = useCallback((id: ImplementationId) => {
+    saveImplementation(id);
+    setImplementationId(id);
+  }, []);
+
+  const changeImplementation = useCallback(() => {
+    clearImplementation();
+    setImplementationId(null);
+    setActiveRoomId(null);
+    dispatch({ kind: "reset" });
+  }, []);
+
+  // Token for the actor WebSocket. Uses the same "convex" template so both
+  // servers can validate one token shape against Clerk's JWKS.
   const getSocketToken = useCallback(
     () => getToken({ template: "convex" }).catch(() => null),
     [getToken],
@@ -78,9 +99,15 @@ function AuthedApp() {
     dispatch({ kind: "frame", frame });
   }, []);
 
+  const implementation = implementationId
+    ? IMPLEMENTATIONS[implementationId]
+    : null;
+  const wsBase = implementation?.wsUrl ?? null;
+
   const { status, send, backend } = useChatSocket(
-    identity ? getSocketToken : null,
+    identity && wsBase ? getSocketToken : null,
     onFrame,
+    wsBase,
   );
 
   const sendMessage = useCallback(
@@ -121,16 +148,34 @@ function AuthedApp() {
     );
   }
 
+  if (!implementation) {
+    return <ImplementationPicker onSelect={selectImplementation} />;
+  }
+
+  const badgeLabel =
+    backend?.server === "rust-actor-chat"
+      ? "Rust"
+      : backend?.server
+        ? backend.server
+        : implementation.label;
+
   return (
     <div className="app">
       <aside className="sidebar">
         <header className="sidebar-header">
           <h1>Actor Chat</h1>
- {backend && (
-              <span className="backend-badge" title={`${backend.server} v${backend.version}`}>
-                {backend.server === "rust-actor-chat" ? "🦀 Rust" : backend.server}
-              </span>
-            )}
+          <button
+            type="button"
+            className="backend-badge"
+            title={
+              backend
+                ? `${backend.server} v${backend.version} — click to switch`
+                : `${implementation.label} (${implementation.wsUrl}) — click to switch`
+            }
+            onClick={changeImplementation}
+          >
+            {badgeLabel}
+          </button>
           <span
             className={`conn-dot conn-${status}`}
             title={`socket: ${status}`}

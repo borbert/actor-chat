@@ -82,14 +82,29 @@ input:focus {
 .sidebar-header {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  gap: 8px;
   padding: 16px;
   border-bottom: 1px solid var(--border);
 }
 
 .sidebar-header h1 {
+  flex: 1;
   font-size: 18px;
   margin: 0;
+}
+
+.backend-badge {
+  font-size: 0.75rem;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: #1a2238;
+  color: #9db4ff;
+  border: 1px solid #3a4a7a;
+  flex-shrink: 0;
+}
+
+.backend-badge:hover {
+  background: #243056;
 }
 
 .conn-dot {
@@ -328,11 +343,46 @@ input:focus {
   margin: 4px 0 0;
 }
 
-  .backend-badge {
-    font-size: 0.75rem;
-    padding: 2px 8px;
-    border-radius: 999px;
-    background: #2b2118;
-    color: #ffa657;
-    border: 1px solid #5a3d20;
-  }
+.impl-picker {
+  width: min(480px, calc(100vw - 32px));
+}
+
+.impl-options {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.impl-option {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  text-align: left;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 14px 16px;
+}
+
+.impl-option:hover:not(:disabled) {
+  border-color: var(--accent);
+  background: var(--bg-hover);
+}
+
+.impl-option:disabled {
+  opacity: 0.45;
+  background: var(--bg);
+  color: var(--text-muted);
+}
+
+.impl-option-label {
+  font-weight: 600;
+  font-size: 15px;
+}
+
+.impl-option-desc {
+  font-size: 13px;
+  color: var(--text-muted);
+}

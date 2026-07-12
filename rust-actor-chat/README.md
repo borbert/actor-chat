@@ -127,15 +127,16 @@ cargo run        # listening on http://0.0.0.0:8090
 Create `web/.env.local`:
 ```
 VITE_CONVEX_URL=https://<your-deployment>.convex.cloud
-VITE_WS_URL=ws://localhost:8090
+VITE_WS_URL_GO=ws://localhost:8080
+VITE_WS_URL_RUST=ws://localhost:8090
 VITE_CLERK_PUBLISHABLE_KEY=pk_test_...
 ```
 ```bash
 cd web && bun install && bun dev      # http://localhost:5173
 ```
 
-Sign in, and the header shows **🦀 Rust**. Point `VITE_WS_URL` at the Go server (`:8080`)
-to A/B the two backends behind the same UI.
+Sign in, pick **Rust** (or Go) on the implementation screen, and the sidebar badge
+shows which actor server you're on. Click the badge to switch.
 
 ## Go vs. Rust at a glance
 

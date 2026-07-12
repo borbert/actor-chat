@@ -12,9 +12,7 @@ export type Frame = {
   typing?: boolean;
   // ping: fresh JWT so long-lived connections outlive the ~60s token life.
   token?: string;
-  server?:string;
-  version?:string;
+  // hello (Rust): server identity announcement on connect.
+  server?: string;
+  version?: string;
 };
-
-export const WS_BASE =
-  (import.meta.env.VITE_WS_URL as string | undefined) ?? "ws://localhost:8080";

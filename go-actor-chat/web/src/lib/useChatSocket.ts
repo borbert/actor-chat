@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Frame, WS_BASE } from "./protocol";
+import { Frame } from "./protocol";
 
 export type SocketStatus = "connecting" | "open" | "closed";
+
+export type BackendInfo = { server: string; version: string };
 
 const PING_INTERVAL_MS = 25_000;
 const MAX_BACKOFF_MS = 10_000;
@@ -9,14 +11,20 @@ const MAX_BACKOFF_MS = 10_000;
 export function useChatSocket(
   getToken: (() => Promise<string | null>) | null,
   onFrame: (frame: Frame) => void,
+  wsBase: string | null,
 ) {
   const [status, setStatus] = useState<SocketStatus>("closed");
+  const [backend, setBackend] = useState<BackendInfo | null>(null);
   const wsRef = useRef<WebSocket | null>(null);
   const onFrameRef = useRef(onFrame);
   onFrameRef.current = onFrame;
 
   useEffect(() => {
-    if (!getToken) return;
+    if (!getToken || !wsBase) {
+      setStatus("closed");
+      setBackend(null);
+      return;
+    }
 
     let disposed = false;
     let attempt = 0;
@@ -32,6 +40,7 @@ export function useChatSocket(
 
     const connect = async () => {
       setStatus("connecting");
+      setBackend(null);
       const token = await getToken();
       if (disposed) return;
       if (!token) {
@@ -41,7 +50,7 @@ export function useChatSocket(
       }
 
       const ws = new WebSocket(
-        `${WS_BASE}/ws?token=${encodeURIComponent(token)}`,
+        `${wsBase}/ws?token=${encodeURIComponent(token)}`,
       );
       wsRef.current = ws;
 
@@ -65,7 +74,15 @@ export function useChatSocket(
 
       ws.onmessage = (event) => {
         try {
-          onFrameRef.current(JSON.parse(event.data as string) as Frame);
+          const frame = JSON.parse(event.data as string) as Frame;
+          if (frame.type === "hello") {
+            setBackend({
+              server: frame.server ?? "unknown",
+              version: frame.version ?? "",
+            });
+            return;
+          }
+          onFrameRef.current(frame);
         } catch {
           // Ignore malformed frames from the server.
         }
@@ -85,8 +102,9 @@ export function useChatSocket(
       clearTimeout(reconnectTimer);
       wsRef.current?.close();
       wsRef.current = null;
+      setBackend(null);
     };
-  }, [getToken]);
+  }, [getToken, wsBase]);
 
   const send = useCallback((frame: Frame) => {
     const ws = wsRef.current;
@@ -97,5 +115,5 @@ export function useChatSocket(
     return false;
   }, []);
 
-  return { status, send };
+  return { status, send, backend };
 }

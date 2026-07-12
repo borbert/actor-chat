@@ -79,12 +79,12 @@ See each subproject's README for full setup (Convex deploy + Clerk JWT template 
 - **[go-actor-chat/README.md](go-actor-chat/README.md)**
 - **[rust-actor-chat/README.md](rust-actor-chat/README.md)**
 
-Because both speak the same protocol, you can point the same React frontend at either
-backend by changing `VITE_WS_URL` (`ws://localhost:8080` for Go, `ws://localhost:8090`
-for Rust). The Rust server announces itself with a `hello` frame that the frontend
-renders as a **🦀 Rust** badge — so connecting to Rust lights up the badge, and pointing
-back at Go (which doesn't send `hello`) makes it disappear. Instant, visible proof of
-which backend you're talking to.
+Because both speak the same protocol, you can point the React frontend at either
+backend from the **implementation picker** shown right after sign-in (Go :8080,
+Rust :8090; Zig is listed but not available yet). Choice is stored in
+`localStorage`; click the sidebar badge to switch. Override URLs with
+`VITE_WS_URL_GO` / `VITE_WS_URL_RUST` (and later `VITE_WS_URL_ZIG`). The Rust
+server announces itself with a `hello` frame that upgrades the sidebar badge.
 
 ## Repository layout
 
