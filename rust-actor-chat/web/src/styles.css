@@ -149,6 +149,24 @@ input:focus {
   color: var(--text-muted);
 }
 
+.conn-banner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 16px;
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--border);
+  background: color-mix(in srgb, var(--danger) 12%, transparent);
+  color: var(--text);
+}
+
+.conn-banner p {
+  margin: 0;
+  flex: 1;
+  min-width: 12rem;
+  font-size: 0.9rem;
+}
+
 /* Room list */
 .room-list {
   flex: 1;

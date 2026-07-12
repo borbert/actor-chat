@@ -26,6 +26,7 @@ export default function App() {
   return (
     <>
       <Show when="signed-out">
+        <ClearImplementationOnSignOut />
         <SignIn />
       </Show>
       <Show when="signed-in">
@@ -33,6 +34,14 @@ export default function App() {
       </Show>
     </>
   );
+}
+
+/** Sign-out should return to the implementation picker, not the last backend. */
+function ClearImplementationOnSignOut() {
+  useEffect(() => {
+    clearImplementation();
+  }, []);
+  return null;
 }
 
 function AuthedApp() {
@@ -192,6 +201,18 @@ function AuthedApp() {
         </footer>
       </aside>
       <main className="main">
+        {status !== "open" && (
+          <div className="conn-banner" role="status">
+            <p>
+              {status === "connecting"
+                ? `Connecting to ${implementation.label} at ${implementation.wsUrl}…`
+                : `Can't reach ${implementation.label} at ${implementation.wsUrl}. Start that backend, or pick another.`}
+            </p>
+            <button type="button" className="link" onClick={changeImplementation}>
+              Switch implementation
+            </button>
+          </div>
+        )}
         {activeRoomId ? (
           <ChatRoom
             key={activeRoomId}

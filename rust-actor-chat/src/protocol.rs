@@ -33,7 +33,6 @@ pub enum Inbound {
 pub enum Outbound {
     #[serde(rename_all = "camelCase")]
     Hello {
-        token: String,
         server: String,
         version: String,
     },

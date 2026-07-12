@@ -51,13 +51,14 @@ pub fn main() !void {
 
     installSignalHandlers();
 
+    // Clerk JWTs in ?token= easily exceed httpz's default 4KiB request buffer → 431.
     var http_server = try httpz.Server(*server.App).init(allocator, .{
         .address = .all(settings.port),
+        .request = .{ .buffer_size = 32 * 1024 },
     }, &app);
-    defer {
-        http_server.stop();
-        http_server.deinit();
-    }
+    // stop() is invoked from the signal handler; calling it again here
+    // double-closes the listener and panics (BADF).
+    defer http_server.deinit();
     server_instance = &http_server;
 
     var router = try http_server.router(.{});

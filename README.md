@@ -80,8 +80,25 @@ See each subproject's README for full setup (Convex deploy + Clerk JWT template 
 
 Because they speak the same protocol, you can point the React frontend at any
 backend from the **implementation picker** shown right after sign-in (Go :8080,
-Rust :8090, Zig :8100). Choice is stored in `localStorage`; click the sidebar badge
-to switch. Override URLs with `VITE_WS_URL_GO` / `VITE_WS_URL_RUST` / `VITE_WS_URL_ZIG`.
+Rust :8090, Zig :8100). Choice is remembered for the signed-in session (sidebar
+badge to switch); signing out clears it so the picker returns. Override URLs with
+`VITE_WS_URL_GO` / `VITE_WS_URL_RUST` / `VITE_WS_URL_ZIG`.
+
+Each backend is a separate process — start the ones you want to compare:
+
+```bash
+# Go :8080
+(cd go-actor-chat && make run)
+
+# Rust :8090
+(cd rust-actor-chat && cargo run)
+
+# Zig :8100
+(cd zig-actor-chat && zig build run)
+
+# Frontend (any one copy is enough)
+(cd rust-actor-chat/web && bun dev)
+```
 
 ## Repository layout
 
