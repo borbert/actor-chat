@@ -1,4 +1,5 @@
 pub const Engine = @import("engine.zig").Engine;
+pub const PeriodicSender = @import("engine.zig").PeriodicSender;
 pub const Actor = @import("actor.zig").Actor;
 pub const Message = @import("message.zig").Message;
 pub const ConcurrentHashMap = @import("concurrentHashMap.zig").ConcurrentHashMap;

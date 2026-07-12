@@ -1,7 +1,12 @@
 const std = @import("std");
 
 pub fn build(b: *std.Build) void {
-    const target = b.standardTargetOptions(.{});
+    // Prefer musl on Linux: system glibc on rolling distros (e.g. Arch) can
+    // ship .sframe sections that Zig 0.15's linker does not yet handle.
+    const default_target = b.resolveTargetQuery(.{
+        .abi = if (@import("builtin").os.tag == .linux) .musl else null,
+    });
+    const target = b.standardTargetOptions(.{ .default_target = default_target.query });
     const optimize = b.standardOptimizeOption(.{});
 
     const inklist = b.createModule(.{

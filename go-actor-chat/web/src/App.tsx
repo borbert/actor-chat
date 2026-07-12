@@ -155,9 +155,13 @@ function AuthedApp() {
   const badgeLabel =
     backend?.server === "rust-actor-chat"
       ? "Rust"
-      : backend?.server
-        ? backend.server
-        : implementation.label;
+      : backend?.server === "zig-actor-chat"
+        ? "Zig"
+        : backend?.server === "go-actor-chat"
+          ? "Go"
+          : backend?.server
+            ? backend.server
+            : implementation.label;
 
   return (
     <div className="app">

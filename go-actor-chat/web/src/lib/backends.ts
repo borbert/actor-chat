@@ -32,9 +32,9 @@ export const IMPLEMENTATIONS: Record<ImplementationId, Implementation> = {
   zig: {
     id: "zig",
     label: "Zig",
-    description: "Coming soon",
+    description: "InkList actors · httpz · port 8100",
     wsUrl: envUrl("VITE_WS_URL_ZIG", "ws://localhost:8100"),
-    available: false,
+    available: true,
   },
 };
 

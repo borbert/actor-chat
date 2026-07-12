@@ -43,7 +43,7 @@ const ActorHandle = struct {
 };
 
 /// Periodically sends messages to an actor until stopped.
-const PeriodicSender = struct {
+pub const PeriodicSender = struct {
     engine: *Engine,
     actor_id: u64,
     msg: *Message,
@@ -80,7 +80,7 @@ const PeriodicSender = struct {
     fn run(self: *PeriodicSender) void {
         defer self.wait_group.finish(); // Signal completion when done
         while (!self.stop_flag.load(.acquire)) {
-            std.time.sleep(self.delay_ns);
+            std.Thread.sleep(self.delay_ns);
             if (self.stop_flag.load(.acquire)) break;
             const cloned_msg = self.msg.clone(self.engine.allocator) catch |err| {
                 std.log.err("Failed to clone message: {}", .{err});
