@@ -1,0 +1,8 @@
+.zig-cache/
+zig-out/
+.env
+.env.local
+*.o
+*.a
+.DS_Store
+node_modules/
