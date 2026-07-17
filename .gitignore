@@ -1,2 +1,4 @@
 .serena/
 tmp/
+node_modules/
+*.tsbuildinfo
