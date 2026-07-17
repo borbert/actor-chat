@@ -168,4 +168,4 @@ shows which actor server you're on. Click the badge to switch.
 
 ## License
 
-MIT (or your choice).
+MIT — see [LICENSE](../LICENSE).

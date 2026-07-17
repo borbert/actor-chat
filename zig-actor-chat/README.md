@@ -100,4 +100,4 @@ zig build test
 
 ## License
 
-MIT (or your choice). InkList is MIT; see `vendor/InkList/LICENSE`.
+MIT — see [LICENSE](../LICENSE). InkList is MIT; see `vendor/InkList/LICENSE`.

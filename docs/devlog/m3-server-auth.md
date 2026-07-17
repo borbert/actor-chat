@@ -52,7 +52,7 @@ go get github.com/golang-jwt/jwt/v5 github.com/MicahParks/keyfunc/v3
 Root `.env.local` (the Go server's env), add:
 
 ```bash
-CLERK_JWT_ISSUER_DOMAIN=https://actual-grouper-17.clerk.accounts.dev
+CLERK_JWT_ISSUER_DOMAIN=https://verb-noun-00.clerk.accounts.dev
 ```
 
 Same value the Convex deployment already has. JWKS is derived from it:
