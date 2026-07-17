@@ -51,16 +51,19 @@ pub const RoomRegistry = struct {
         return actor_id;
     }
 
-    fn onEvict(ctx: *anyopaque, room_id: []const u8) void {
+    fn onEvict(ctx: *anyopaque, room_id: []const u8, actor_id: u64) void {
         const self: *RoomRegistry = @ptrCast(@alignCast(ctx));
         self.mutex.lock();
         defer self.mutex.unlock();
+        // Only drop/poison if this is still the mapped actor — a newer spawn
+        // for the same room_id must stay registered.
+        const current = self.rooms.get(room_id) orelse return;
+        if (current != actor_id) return;
         if (self.rooms.fetchRemove(room_id)) |kv| {
             self.allocator.free(kv.key);
             // poison asynchronously so we are not inside RoomActor.receive
             const engine = self.engine;
-            const id = kv.value;
-            engine.thread_pool.spawn(poisonRoom, .{ engine, id }) catch {};
+            engine.thread_pool.spawn(poisonRoom, .{ engine, actor_id }) catch {};
         }
     }
 

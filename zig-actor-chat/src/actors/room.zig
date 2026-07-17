@@ -103,7 +103,7 @@ pub const RoomActor = struct {
     last_activity_ns: i128 = 0,
     idle_sender: ?*InkList.PeriodicSender = null,
     evicted: bool = false,
-    on_evict: ?*const fn (*anyopaque, []const u8) void = null,
+    on_evict: ?*const fn (*anyopaque, []const u8, u64) void = null,
     on_evict_ctx: ?*anyopaque = null,
 
     pub fn init(allocator: Allocator) !*RoomActor {
@@ -132,7 +132,7 @@ pub const RoomActor = struct {
         engine: *Engine,
         actor_id: u64,
         room_id: []const u8,
-        on_evict: ?*const fn (*anyopaque, []const u8) void,
+        on_evict: ?*const fn (*anyopaque, []const u8, u64) void,
         on_evict_ctx: ?*anyopaque,
     ) !void {
         self.engine = engine;
@@ -168,7 +168,7 @@ pub const RoomActor = struct {
             if (idle_for >= idle_timeout_ns) {
                 self.evicted = true;
                 if (self.on_evict) |cb| {
-                    if (self.on_evict_ctx) |ctx| cb(ctx, self.room_id);
+                    if (self.on_evict_ctx) |ctx| cb(ctx, self.room_id, self.actor_id);
                 }
                 std.log.info("room evicted (idle) room={s}", .{self.room_id});
             }

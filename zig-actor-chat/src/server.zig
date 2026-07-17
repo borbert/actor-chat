@@ -127,8 +127,15 @@ pub const WsClient = struct {
             .body = try self.app.allocator.dupe(u8, body),
             .client_id = try self.app.allocator.dupe(u8, client_id),
         };
-        const thread = try std.Thread.spawn(.{}, SendWork.run, .{job});
-        thread.detach();
+        // Bounded InkList pool (same pattern as registry.poisonRoom); not an OS thread per send.
+        self.app.engine.thread_pool.spawn(SendWork.run, .{job}) catch {
+            self.app.allocator.free(job.token);
+            self.app.allocator.free(job.room_id);
+            self.app.allocator.free(job.body);
+            self.app.allocator.free(job.client_id);
+            // job itself freed by errdefer
+            return error.ThreadPoolBusy;
+        };
     }
 
     fn onPing(self: *WsClient, maybe_token: ?[]const u8) !void {
@@ -275,7 +282,7 @@ pub fn ws(app: *App, req: *httpz.Request, res: *httpz.Response) !void {
         return;
     };
 
-    std.log.info("ws authenticated sub={s} user={s}", .{ sub, user.id });
+    std.log.info("ws authenticated", .{});
 
     const writer_actor_id = app.engine.spawnActor(connection.ConnWriter) catch |err| {
         app.allocator.free(sub);
